@@ -5,7 +5,13 @@ try {
   // do nothing
 }
 
-export * from './errors';
+import * as Errors from './errors';
+import * as Constants from './constants';
+
+export {
+  Errors,
+  Constants,
+};
 
 export const encoding = erlpack ? 'etf' : 'json';
 

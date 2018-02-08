@@ -1,4 +1,4 @@
-export enum codes {
+export enum Codes {
   NO_GATEWAY,
   NO_WEBSOCKET,
   NO_SESSION,
@@ -6,19 +6,19 @@ export enum codes {
   ALREADY_SPAWNED,
 };
 
-export const messages = {
-  [codes.NO_WEBSOCKET]: 'No existing websocket connection to use.',
-  [codes.NO_GATEWAY]: 'No gateway to connect to.',
-  [codes.NO_SESSION]: 'No session to available.',
-  [codes.INVALID_ENCODING]: 'Invalid encoding specified.',
-  [codes.ALREADY_SPAWNED]: 'Shards have already been spawned.',
+export const Messages = {
+  [Codes.NO_WEBSOCKET]: 'No existing websocket connection to use.',
+  [Codes.NO_GATEWAY]: 'No gateway to connect to.',
+  [Codes.NO_SESSION]: 'No session to available.',
+  [Codes.INVALID_ENCODING]: 'Invalid encoding specified.',
+  [Codes.ALREADY_SPAWNED]: 'Shards have already been spawned.',
 };
 
 export class Error extends global.Error {
-  public readonly code: codes;
+  public readonly code: Codes;
 
-  constructor(code: codes) {
-    super(messages[code]);
+  constructor(code: Codes) {
+    super(Messages[code]);
     this.code = code;
   }
 }
