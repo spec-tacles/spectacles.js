@@ -5,6 +5,8 @@ try {
   // do nothing
 }
 
+export * from './errors';
+
 export const encoding = erlpack ? 'etf' : 'json';
 
 export function encode(data: any) {
