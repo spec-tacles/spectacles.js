@@ -1,0 +1,32 @@
+{
+  "name": "@spectacles/util",
+  "version": "0.1.0",
+  "description": "Spectacles utility methods",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "gulp"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spec-tacles/util.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spec-tacles/util/issues"
+  },
+  "homepage": "https://github.com/spec-tacles/util#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^8.9.1",
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-typescript": "^4.0.0",
+    "typescript": "^2.7.1"
+  },
+  "optionalDependencies": {
+    "erlpack": "github:discordapp/erlpack"
+  }
+}
