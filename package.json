@@ -25,10 +25,14 @@
   "devDependencies": {
     "@types/amqplib": "^0.5.6",
     "@types/node": "^8.9.1",
+    "@types/ws": "^4.0.0",
     "del": "^3.0.0",
     "gulp": "^3.9.1",
     "gulp-sourcemaps": "^2.6.4",
     "gulp-typescript": "^4.0.0",
     "typescript": "^2.7.1"
+  },
+  "optionalDependencies": {
+    "ws": "^4.0.0"
   }
 }
