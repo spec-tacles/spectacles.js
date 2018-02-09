@@ -1,6 +1,8 @@
 import { encode, decode } from '@spectacles/util';
 import * as amqp from 'amqplib';
+import { randomBytes } from 'crypto';
 import Broker from './Base';
+import { EventEmitter } from 'events';
 
 /**
  * A broker for AMQP clients. Probably most useful for RabbitMQ.
@@ -14,6 +16,12 @@ export default class Amqp extends Broker {
   public channel?: amqp.Channel;
 
   /**
+   * The callback queue.
+   * @type {?string}
+   */
+  public callback?: string;
+
+  /**
    * The AMQP exchange of this broker.
    * @type {string}
    */
@@ -25,6 +33,8 @@ export default class Amqp extends Broker {
    * @private
    */
   private _consumers: { [event: string]: string } = {};
+
+  private _responses: EventEmitter = new EventEmitter();
 
   /**
    * @constructor
@@ -45,6 +55,13 @@ export default class Amqp extends Broker {
   public async connect(url: string, options?: any): Promise<void> {
     const connection = await amqp.connect(`amqp://${url}`, options);
     this.channel = await connection.createChannel();
+
+    // setup RPC callback queue
+    this.callback = (await this.channel.assertQueue('', { exclusive: true })).queue;
+    this.channel.consume(this.callback, (msg) => {
+      if (msg) this._responses.emit(msg.properties.correlationId, decode(msg.content));
+    });
+
     await this.channel.assertExchange(this.group, 'direct');
   }
 
@@ -73,7 +90,12 @@ export default class Amqp extends Broker {
       // register consumer
       const consumer = await this._channel.consume(queue, msg => {
         // emit consumed messages with an acknowledger function
-        if (msg) this.emit(event, decode(msg.content), () => this._channel.ack(msg));
+        if (msg) {
+          this.emit(event, decode(msg.content), (response: any = null) => {
+            this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId });
+            this._channel.ack(msg);
+          });
+        }
       }, options.consume);
 
       this._consumers[event] = consumer.consumerTag;
@@ -107,8 +129,14 @@ export default class Amqp extends Broker {
    * @param {*} data The data to publish
    * @param {?amqp.Options.Publish} options AMQP publish options
    */
-  public publish(event: string, data: any, options?: amqp.Options.Publish) {
-    return this._channel.publish(this.group, event, encode(data), options);
+  public async publish(event: string, data: any, options?: amqp.Options.Publish) {
+    const correlation = randomBytes(20).toString('hex');
+    await this._channel.publish(this.group, event, encode(data), {
+      replyTo: this.callback,
+      correlationId: correlation,
+    });
+
+    return new Promise(r => this._responses.once(correlation, r));
   }
 
   /**
