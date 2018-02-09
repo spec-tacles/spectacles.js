@@ -60,7 +60,7 @@ export default class Amqp extends Broker {
     this.callback = (await this.channel.assertQueue('', { exclusive: true })).queue;
     this.channel.consume(this.callback, (msg) => {
       if (msg) this._responses.emit(msg.properties.correlationId, decode(msg.content));
-    });
+    }, { noAck: true });
 
     await this.channel.assertExchange(this.group, 'direct');
   }
@@ -91,9 +91,9 @@ export default class Amqp extends Broker {
       const consumer = await this._channel.consume(queue, msg => {
         // emit consumed messages with an acknowledger function
         if (msg) {
-          this.emit(event, decode(msg.content), (response: any = null) => {
-            this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId });
-            this._channel.ack(msg);
+          this.emit(event, decode(msg.content), {
+            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
+            ack: () => this._channel.ack(msg),
           });
         }
       }, options.consume);
@@ -136,7 +136,19 @@ export default class Amqp extends Broker {
       correlationId: correlation,
     });
 
-    return new Promise(r => this._responses.once(correlation, r));
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this._responses.removeListener(correlation, listener);
+        reject(new Error('AMQP callback exceeded time limit'));
+      }, 10000);
+
+      const listener = (response: any) => {
+        clearTimeout(timeout);
+        resolve(response);
+      };
+
+      this._responses.once(correlation, listener);
+    });
   }
 
   /**
