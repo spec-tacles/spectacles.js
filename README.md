@@ -1,6 +1,6 @@
 # Spectacles brokers
 
-A unified event publishing API to allow simple and powerfule communication between services. Available brokers:
+A unified event publishing API to allow simple and powerful communication between services. Available brokers:
 
 - AMQP - connects to an AMQP server
 - Local - keeps events on a local event emitter
