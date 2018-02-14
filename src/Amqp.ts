@@ -11,17 +11,17 @@ export default class Amqp extends Broker {
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
    */
-  public channel?: amqp.Channel;
+  public channel?: amqp.Channel = undefined;
 
   /**
    * The AMQP exchange of this broker.
    * @type {string}
    */
-  public group: string;
+  public group: string = '';
 
   /**
    * The consumers that this broker has registered.
-   * @type {{[event: string]: string}}
+   * @type {Object<string, string>}
    * @private
    */
   private _consumers: { [event: string]: string } = {};
@@ -84,7 +84,7 @@ export default class Amqp extends Broker {
   /**
    * Unsubscribe this broker from some AMQP queues.
    * @param {string | string[]} events The channels to unsubscribe from
-   * @returns {Promise<undefined[]>}
+   * @returns {Promise<Array<undefined>>}
    */
   public unsubscribe(events: string | string[]): Promise<void[]> {
     super.unsubscribe(events);
