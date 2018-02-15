@@ -42,10 +42,11 @@ export default class Amqp extends Broker {
    * @param {?*} options Options to connect to the AMQP client
    * @returns {Promise<void>}
    */
-  public async connect(url: string, options?: any): Promise<void> {
-    const connection = await amqp.connect(`amqp://${url}`, options);
+  public async connect(urlOrConn: string | amqp.Connection, options?: any): Promise<amqp.Connection> {
+    const connection = typeof urlOrConn === 'string' ? await amqp.connect(`amqp://${urlOrConn}`, options) : urlOrConn;
     this.channel = await connection.createChannel();
     await this.channel.assertExchange(this.group, 'direct');
+    return connection;
   }
 
   /**
