@@ -13,7 +13,7 @@ export default class Amqp extends Broker {
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
    */
-  public channel?: amqp.Channel;
+  public channel?: amqp.Channel = undefined;
 
   /**
    * The callback queue.
@@ -25,11 +25,11 @@ export default class Amqp extends Broker {
    * The AMQP exchange of this broker.
    * @type {string}
    */
-  public group: string;
+  public group: string = '';
 
   /**
    * The consumers that this broker has registered.
-   * @type {{[event: string]: string}}
+   * @type {Object<string, string>}
    * @private
    */
   private _consumers: { [event: string]: string } = {};
@@ -52,8 +52,8 @@ export default class Amqp extends Broker {
    * @param {?*} options Options to connect to the AMQP client
    * @returns {Promise<void>}
    */
-  public async connect(url: string, options?: any): Promise<void> {
-    const connection = await amqp.connect(`amqp://${url}`, options);
+  public async connect(urlOrConn: string | amqp.Connection, options?: any): Promise<amqp.Connection> {
+    const connection = typeof urlOrConn === 'string' ? await amqp.connect(`amqp://${urlOrConn}`, options) : urlOrConn;
     this.channel = await connection.createChannel();
 
     // setup RPC callback queue
@@ -63,6 +63,7 @@ export default class Amqp extends Broker {
     }, { noAck: true });
 
     await this.channel.assertExchange(this.group, 'direct');
+    return connection;
   }
 
   /**
@@ -106,7 +107,7 @@ export default class Amqp extends Broker {
   /**
    * Unsubscribe this broker from some AMQP queues.
    * @param {string | string[]} events The channels to unsubscribe from
-   * @returns {Promise<undefined[]>}
+   * @returns {Promise<Array<undefined>>}
    */
   public unsubscribe(events: string | string[]): Promise<void[]> {
     super.unsubscribe(events);
