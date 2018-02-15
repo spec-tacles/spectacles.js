@@ -15,7 +15,8 @@ export {
 
 export const encoding = erlpack ? 'etf' : 'json';
 
-export function encode(data: any) {
+export function encode(data: any): Buffer {
+  if (Buffer.isBuffer(data)) return data;
   return erlpack ? erlpack.pack(data) : Buffer.from(JSON.stringify(data));
 }
 
