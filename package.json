@@ -1,6 +1,6 @@
 {
   "name": "@spectacles/brokers",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Brokers for use in Spectacles applications.",
   "main": "dist/index.js",
   "scripts": {
