@@ -142,20 +142,21 @@ export default class Amqp extends Broker {
    * Publish an event to the AMQP broker.
    * @param {string} event The event to publish
    * @param {*} data The data to publish
-   * @param {?amqp.Options.Publish} options AMQP publish options
+   * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
-  public async publish(event: string, data: any, options?: amqp.Options.Publish) {
+  public async publish(event: string, data: any, options: amqp.Options.Publish = {}): Promise<any | void> {
     const correlation = randomBytes(20).toString('hex');
-    await this._channel.publish(this.group, event, encode(data), {
+    await this._channel.publish(this.group, event, encode(data), Object.assign(options, {
       replyTo: this.callback,
       correlationId: correlation,
-    });
+    }));
 
+    if (!options.expiration) return;
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this._responses.removeListener(correlation, listener);
         reject(new Error('AMQP callback exceeded time limit'));
-      }, 10000);
+      }, options.expiration);
 
       const listener = (response: any) => {
         clearTimeout(timeout);
