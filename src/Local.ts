@@ -14,7 +14,7 @@ export default class Local extends Broker {
   public publish(event: string, data: any): void {
     if (this.events.has(event)) {
       if (Buffer.isBuffer(data)) data = JSON.parse(data.toString());
-      this.emit(event, data, () => {});
+      this.emit(event, data, { ack: () => {} });
     }
   }
 
