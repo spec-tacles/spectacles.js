@@ -151,15 +151,19 @@ export default class Amqp extends Broker {
       correlationId: correlation,
     }));
 
-    if (!options.expiration) return;
+    if (!this.rpc) return;
     return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this._responses.removeListener(correlation, listener);
-        reject(new Error('AMQP callback exceeded time limit'));
-      }, options.expiration);
+      let timeout: number | undefined;
+
+      if (options.expiration) {
+        timeout = setTimeout(() => {
+          this._responses.removeListener(correlation, listener);
+          reject(new Error('AMQP callback exceeded time limit'));
+        }, options.expiration);
+      }
 
       const listener = (response: any) => {
-        clearTimeout(timeout);
+        if (timeout) clearTimeout(timeout);
         resolve(response);
       };
 
