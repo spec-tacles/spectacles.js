@@ -14,20 +14,22 @@ const broker = new Amqp('some group name');
 (async () => {
   await broker.connect('localhost');
 
-  broker.on('some', (d, ack) => {
-    console.log(d);
+  broker.on('some', (d, { ack, reply }) => {
+    console.log(d); // meme
     ack();
+    reply('cool reply 1');
   });
 
-  broker.on('events', (d, ack) => {
-    console.log(d);
+  broker.on('events', (d, { ack, reply }) => {
+    console.log(d); // meme2
     ack();
+    reply('cool reply 2');
   });
 
   await broker.subscribe(['some', 'events']);
 
-  await broker.publish('some', 'meme');
-  await broker.publish('events', 'meme2');
+  console.log(await broker.publish('some', 'meme')); // cool reply 1
+  console.log(await broker.publish('events', 'meme2')); // cool reply 2
 })();
 ```
 
