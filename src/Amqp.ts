@@ -4,11 +4,20 @@ import { randomBytes } from 'crypto';
 import Broker from './Base';
 import { EventEmitter } from 'events';
 
+export interface AmqpOptions {
+  rpc?: boolean;
+}
+
 /**
  * A broker for AMQP clients. Probably most useful for RabbitMQ.
  * @extends Broker
  */
 export default class Amqp extends Broker {
+  /**
+   * Whether this broker is in RPC mode: only required to be true for subscription brokers.
+   */
+  public rpc: boolean;
+
   /**
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
@@ -41,9 +50,10 @@ export default class Amqp extends Broker {
    * @param {Client} client The client of this broker
    * @param {string} [group='default'] The group of this broker
    */
-  constructor(group: string = 'default') {
+  constructor(group: string = 'default', options: AmqpOptions = {}) {
     super();
     this.group = group;
+    this.rpc = options.rpc || false;
   }
 
   /**
@@ -92,9 +102,13 @@ export default class Amqp extends Broker {
       const consumer = await this._channel.consume(queue, msg => {
         // emit consumed messages with an acknowledger function
         if (msg) {
+          const reply = (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId });
           this.emit(event, decode(msg.content), {
-            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
-            ack: () => this._channel.ack(msg),
+            reply,
+            ack: () => {
+              this._channel.ack(msg);
+              if (!this.rpc) reply();
+            },
           });
         }
       }, options.consume);
