@@ -14,7 +14,7 @@ export interface AmqpOptions {
  */
 export default class Amqp extends Broker {
   /**
-   * Whether this broker is in RPC mode: only required to be true for subscription brokers.
+   * Whether this broker is in RPC mode: must be specified on all brokers that use RPC.
    */
   public rpc: boolean;
 
@@ -43,12 +43,20 @@ export default class Amqp extends Broker {
    */
   private _consumers: { [event: string]: string } = {};
 
+  /**
+   * RPC responses this broker receives.
+   * @type {EventEmitter}
+   * @private
+   */
   private _responses: EventEmitter = new EventEmitter();
 
   /**
    * @constructor
    * @param {Client} client The client of this broker
    * @param {string} [group='default'] The group of this broker
+   * @param {Object} [options={}] Options for constructing this broker
+   * @param {boolean} [options.rpc=false] Whether this broker is in RPC mode (causes the {@link Amqp#publish}
+   * method to wait for a response before resolving)
    */
   constructor(group: string = 'default', options: AmqpOptions = {}) {
     super();
