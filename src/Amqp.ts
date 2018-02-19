@@ -6,6 +6,7 @@ import { EventEmitter } from 'events';
 
 export interface AmqpOptions {
   rpc?: boolean;
+  reconnectTimeout?: number;
 }
 
 /**
@@ -17,6 +18,11 @@ export default class Amqp extends Broker {
    * Whether this broker is in RPC mode: must be specified on all brokers that use RPC.
    */
   public rpc: boolean;
+
+  /**
+   * How long to wait before attempting a reconnection.
+   */
+  public reconnectTimeout: number;
 
   /**
    * The AMQP channel currently connected to.
@@ -62,6 +68,7 @@ export default class Amqp extends Broker {
     super();
     this.group = group;
     this.rpc = options.rpc || false;
+    this.reconnectTimeout = options.reconnectTimeout || 1e4;
   }
 
   /**
@@ -71,7 +78,17 @@ export default class Amqp extends Broker {
    * @returns {Promise<void>}
    */
   public async connect(urlOrConn: string | amqp.Connection, options?: any): Promise<amqp.Connection> {
-    const connection = typeof urlOrConn === 'string' ? await amqp.connect(`amqp://${urlOrConn}`, options) : urlOrConn;
+    let connection: amqp.Connection | undefined;
+    if (typeof urlOrConn !== 'string') connection = urlOrConn;
+
+    while (!connection) {
+      try {
+        connection = await amqp.connect(`amqp://${urlOrConn}`, options);
+      } catch (e) {
+        await new Promise(r => setTimeout(r, this.reconnectTimeout));
+      }
+    }
+
     this.channel = await connection.createChannel();
 
     // setup RPC callback queue
