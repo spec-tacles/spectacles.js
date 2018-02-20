@@ -104,7 +104,9 @@ export default class Amqp extends Broker {
   /**
    * Subscribe this broker to some AMQP queues.
    * @param {string|Iterable<string>} events The events to subscribe to
-   * @param {{consume: ?amqp.Options.Consume, assert: ?amqp.Options.AssertQueue}} options The connection options
+   * @param {Object} [options={}] The connection options
+   * @param {amqp.Options.Consume} [options.consume] Options to pass to the consumer
+   * @param {amqp.Options.AssertQueue} [options.assert] Options to pass to the queue assertion
    * @returns {Promise<amqp.Replies.Consume[]>}
    */
   public subscribe(events: string | Iterable<string>, options: {
