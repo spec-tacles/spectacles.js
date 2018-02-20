@@ -9,7 +9,7 @@ A unified event publishing API to allow simple and powerful communication betwee
 
 ```js
 const { Amqp } = require('@spectacles/brokers');
-const broker = new Amqp('some group name');
+const broker = new Amqp('some group name', { rpc: true });
 
 (async () => {
   await broker.connect('localhost');
@@ -33,4 +33,4 @@ const broker = new Amqp('some group name');
 })();
 ```
 
-Obviously this is intended for use across multiple separate applications, where you publish in one app and subscribe in another.
+Obviously this is intended for use across multiple separate applications, where you publish in one app and subscribe in another. Removing the RPC option will negate the need to explicitly call `reply`.
