@@ -142,13 +142,9 @@ export default class Amqp extends Broker {
       const consumer = await this._channel.consume(queue, msg => {
         // emit consumed messages with an acknowledger function
         if (msg) {
-          const reply = (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId });
           this.emit(event, decode(msg.content), {
-            reply,
-            ack: () => {
-              this._channel.ack(msg);
-              if (!this.rpc) reply();
-            },
+            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
+            ack: () =>  this._channel.ack(msg),
           });
         }
       }, options.consume);
