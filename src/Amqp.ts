@@ -91,7 +91,10 @@ export default class Amqp extends Broker {
       }
 
       connection.on('close', (err) => {
-        if (!isFatalError(err)) setTimeout(() => this.connect(urlOrConn, options), this.reconnectTimeout);
+        if (!isFatalError(err)) {
+          this.emit('close', err);
+          setTimeout(() => this.connect(urlOrConn, options), this.reconnectTimeout);
+        }
       });
 
       connection.on('error', (err) => {
