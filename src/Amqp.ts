@@ -1,5 +1,6 @@
 import { encode, decode } from '@spectacles/util';
 import * as amqp from 'amqplib';
+const { isFatalError } = require('amqplib/lib/connection');
 import { randomBytes } from 'crypto';
 import Broker from './Base';
 import { EventEmitter } from 'events';
@@ -86,7 +87,16 @@ export default class Amqp extends Broker {
         connection = await amqp.connect(`amqp://${urlOrConn}`, options);
       } catch (e) {
         await new Promise(r => setTimeout(r, this.reconnectTimeout));
+        continue;
       }
+
+      connection.on('close', (err) => {
+        if (!isFatalError(err)) setTimeout(() => this.connect(urlOrConn, options), this.reconnectTimeout);
+      });
+
+      connection.on('error', (err) => {
+        this.emit('error', err);
+      });
     }
 
     this.channel = await connection.createChannel();
