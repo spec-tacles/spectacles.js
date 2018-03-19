@@ -1,3 +1,6 @@
-node_modules/
-src/
-tsconfig.json
+/*
+
+!typings/**
+!dist/**
+!package.json
+!yarn.lock
