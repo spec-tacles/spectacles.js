@@ -1,0 +1,21 @@
+{
+  "name": "@spectacles/types",
+  "version": "0.1.0",
+  "description": "Typings for Discord objects.",
+  "main": "dist/index.js",
+  "types": "typings/index.d.ts",
+  "scripts": {
+    "prepare": "yarn build",
+    "build": "gulp"
+  },
+  "repository": "https://github.com/spec-tacles/types.git",
+  "author": "Will Nelson <nelson.will@live.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "del": "^3.0.0",
+    "gulp": "^3.9.1",
+    "gulp-sourcemaps": "^2.6.4",
+    "gulp-typescript": "^4.0.1",
+    "typescript": "^2.7.2"
+  }
+}
