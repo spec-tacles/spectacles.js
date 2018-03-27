@@ -44,6 +44,13 @@ export default class Amqp extends Broker {
   public group: string = '';
 
   /**
+   * The subgroup of this broker. Useful to setup multiple groups of queues that all receive the same data.
+   * Implemented internally as an extra identifier in the queue name.
+   * @type {string}
+   */
+  public subgroup: string = '';
+
+  /**
    * The consumers that this broker has registered.
    * @type {Object<string, string>}
    * @private
@@ -61,13 +68,21 @@ export default class Amqp extends Broker {
    * @constructor
    * @param {Client} client The client of this broker
    * @param {string} [group='default'] The group of this broker
+   * @param {string} [subgroup] The {@link Amqp#subgroup} of this broker
    * @param {Object} [options={}] Options for constructing this broker
    * @param {boolean} [options.rpc=false] Whether this broker is in RPC mode (causes the {@link Amqp#publish}
    * method to wait for a response before resolving)
+   * @param {number} [options.reconnectTimeout=1e4] How often to attempt to reconnect when the connection fails.
    */
-  constructor(group: string = 'default', options: AmqpOptions = {}) {
+  constructor(group: string, options?: AmqpOptions);
+  constructor(group: string, subgroup: string, options?: AmqpOptions);
+  constructor(group: string = 'default', subgroup?: AmqpOptions | string, options: AmqpOptions = {}) {
     super();
     this.group = group;
+
+    if (typeof subgroup === 'object') options = subgroup;
+    else if (typeof subgroup === 'string') this.subgroup = subgroup;
+
     this.rpc = options.rpc || false;
     this.reconnectTimeout = options.reconnectTimeout || 1e4;
   }
@@ -86,6 +101,7 @@ export default class Amqp extends Broker {
       try {
         connection = await amqp.connect(`amqp://${urlOrConn}`, options);
       } catch (e) {
+        this.emit('close', e);
         await new Promise(r => setTimeout(r, this.reconnectTimeout));
         continue;
       }
@@ -134,7 +150,7 @@ export default class Amqp extends Broker {
     // register consumers in parallel
     return Promise.all((events as Array<string>).map(async event => {
       // setup queue
-      const queue = `${this.group}:${event}`;
+      const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
       await this._channel.assertQueue(queue, options.assert);
       await this._channel.bindQueue(queue, this.group, event);
 
