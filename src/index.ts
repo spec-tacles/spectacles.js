@@ -6,6 +6,8 @@ import Message from './Message';
 import Role from './Role';
 import User from './User';
 
+export * from './packets';
+
 export * from './Channel';
 export * from './Emoji';
 export * from './Guild';
