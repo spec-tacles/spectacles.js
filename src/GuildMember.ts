@@ -4,7 +4,7 @@ export interface VoiceState {
   guild_id?: string;
   channel_id: string;
   user_id: string;
-  sessioN_id: string;
+  session_id: string;
   deaf: boolean;
   mute: boolean;
   self_deaf: boolean;

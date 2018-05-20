@@ -154,7 +154,7 @@ export type VoiceStateUpdate = VoiceState;
 export interface VoiceServerUpdate {
   token: string;
   guild_id: string;
-  endpoitn: string;
+  endpoint: string;
 }
 
 // Webhooks
