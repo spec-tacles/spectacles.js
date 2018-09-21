@@ -160,7 +160,9 @@ export default class Amqp extends Broker {
         if (msg) {
           this.emit(event, decode(msg.content), {
             reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
-            ack: () =>  this._channel.ack(msg),
+            ack: () => this._channel.ack(msg),
+            nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
+            reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
           });
         }
       }, options.consume);
