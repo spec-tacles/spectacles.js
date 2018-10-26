@@ -1,19 +1,25 @@
 const gulp = require('gulp');
-const del = require('del');
+const fsn = require('fs-nextra');
 const ts = require('gulp-typescript');
 const sourcemaps = require('gulp-sourcemaps');
+const merge = require('merge2');
 const project = ts.createProject('tsconfig.json');
 
-gulp.task('default', ['build']);
-
-gulp.task('build', () => {
-  del.sync(['dist/**', '!dist']);
-  del.sync(['typings/**', '!typings']);
+async function build() {
+  await Promise.all([
+    fsn.emptydir('dist'),
+    fsn.emptydir('typings'),
+  ]);
 
   const result = project.src()
     .pipe(sourcemaps.init())
     .pipe(project());
 
-  result.js.pipe(sourcemaps.write('.', { sourceRoot: '../src' })).pipe(gulp.dest('dist'));
-  result.dts.pipe(gulp.dest('typings'));
-});
+  return merge([
+    result.dts.pipe(gulp.dest('typings')),
+    result.js.pipe(sourcemaps.write('.', { sourceRoot: '../src' })).pipe(gulp.dest('dist')),
+  ]);
+}
+
+gulp.task('default', build);
+gulp.task('build', build);
