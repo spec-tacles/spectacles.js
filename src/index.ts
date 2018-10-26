@@ -7,10 +7,12 @@ try {
 
 import * as Errors from './errors';
 import * as Constants from './constants';
+import Permissions from './Permissions';
 
 export {
   Errors,
   Constants,
+  Permissions,
 };
 
 export const encoding = erlpack ? 'etf' : 'json';
