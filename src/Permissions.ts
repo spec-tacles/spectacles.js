@@ -1,7 +1,60 @@
 import { AvailableGuild, Channel, GuildMember } from '@spectacles/types';
 
+/*
+   Derived from work in https://github.com/discordjs/discord.js.
+
+   Copyright 2018 Will Nelson
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+
+interface Flags {
+  CREATE_INSTANT_INVITE: number;
+  KICK_MEMBERS: number;
+  BAN_MEMBERS: number;
+  ADMINISTRATOR: number;
+  MANAGE_CHANNELS: number;
+  MANAGE_GUILD: number;
+  ADD_REACTIONS: number;
+  VIEW_AUDIT_LOG: number;
+  PRIORITY_SPEAKER: number;
+
+  VIEW_CHANNEL: number;
+  SEND_MESSAGES: number;
+  SEND_TTS_MESSAGES: number;
+  MANAGE_MESSAGES: number;
+  EMBED_LINKS: number;
+  ATTACH_FILES: number;
+  READ_MESSAGE_HISTORY: number;
+  MENTION_EVERYONE: number;
+  USE_EXTERNAL_EMOJIS: number;
+
+  CONNECT: number;
+  SPEAK: number;
+  MUTE_MEMBERS: number;
+  DEAFEN_MEMBERS: number;
+  MOVE_MEMBERS: number;
+  USE_VAD: number;
+
+  CHANGE_NICKNAME: number;
+  MANAGE_NICKNAMES: number;
+  MANAGE_ROLES: number;
+  MANAGE_WEBHOOKS: number;
+  MANAGE_EMOJIS: number;
+}
+
 export default class Permissions {
-  static FLAGS = {
+  static FLAGS: Flags = {
     CREATE_INSTANT_INVITE: 1 << 0,
     KICK_MEMBERS: 1 << 1,
     BAN_MEMBERS: 1 << 2,
@@ -95,5 +148,13 @@ export default class Permissions {
 
   public clone(): Permissions {
     return new Permissions(this.bitfield);
+  }
+
+  public valueOf(): number {
+    return this.bitfield;
+  }
+
+  public toJSON(): string[] {
+    return (Object.keys(Permissions.FLAGS) as Array<keyof Flags>).filter((perm) => this.has(Permissions.FLAGS[perm]));
   }
 }
