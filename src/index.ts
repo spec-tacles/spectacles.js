@@ -22,7 +22,7 @@ export function encode(data: any): Buffer {
   return erlpack ? erlpack.pack(data) : Buffer.from(JSON.stringify(data));
 }
 
-export function decode<T = any>(data: ArrayBuffer | string | Buffer[] | Buffer): T {
+export function decode<T = any>(data: ArrayBuffer | string | Buffer[] | Buffer | Uint8Array): T {
   if (data instanceof ArrayBuffer) data = Buffer.from(data);
   else if (Array.isArray(data)) data = Buffer.concat(data);
   else if (typeof data === 'string') data = Buffer.from(data);
