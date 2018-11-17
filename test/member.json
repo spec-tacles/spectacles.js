@@ -1,0 +1,16 @@
+{
+  "user": {
+    "username": "AIRHORN SOLUTIONS",
+    "id": "159800228088774656",
+    "discriminator": "6723",
+    "bot": true,
+    "avatar": "96be9927ca947a75021db568485612fc"
+  },
+  "roles": [
+    "224965306395787265",
+    "236599010100510730"
+  ],
+  "mute": false,
+  "joined_at": "2016-10-14T21:19:59.792000+00:00",
+  "deaf": false
+}

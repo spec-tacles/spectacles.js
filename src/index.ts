@@ -27,5 +27,8 @@ export function decode<T = any>(data: ArrayBuffer | string | Buffer[] | Buffer |
   else if (Array.isArray(data)) data = Buffer.concat(data);
   else if (typeof data === 'string') data = Buffer.from(data);
 
-  return erlpack ? erlpack.unpack(data) : JSON.parse(data.toString());
+  if (erlpack) return erlpack.unpack(data);
+
+  if (!Buffer.isBuffer(data)) data = Buffer.from(data);
+  return JSON.parse(data.toString());
 }
