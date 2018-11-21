@@ -11,16 +11,20 @@ export default class Local extends Broker {
    * @param {*} data The data to publish
    * @returns {undefined}
    */
-  public publish(event: string, data: any): void {
-    if (this.events.has(event)) {
+  public publish(event: string, data: any): Promise<void> {
+    if (this.eventNames().includes(event)) {
       if (Buffer.isBuffer(data)) data = JSON.parse(data.toString());
       this.emit(event, data, { ack: () => {} });
     }
+
+    return Promise.resolve();
   }
 
-  /**
-   * Placeholder connect method: isn't actually needed for a local broker.
-   * @returns {undefined}
-   */
-  public connect(): void {}
+  protected subscribe(): Promise<void> {
+    return Promise.resolve();
+  }
+
+  protected unsubscribe(): Promise<void> {
+    return Promise.resolve();
+  }
 }

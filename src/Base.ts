@@ -5,12 +5,17 @@ import { EventEmitter } from 'events';
  * @abstract
  */
 export default abstract class Broker extends EventEmitter {
+  constructor() {
+    super();
 
-  /**
-   * The events that this broker handles.
-   * @type {Set<string>}
-   */
-  public readonly events: Set<string> = new Set();
+    this.on('newListener', (event) => {
+      this.subscribe(event).then(result => this.emit('subscribe', result), e => this.emit('error', e));
+    });
+
+    this.on('removeListener', (event) => {
+      this.unsubscribe(event).then(result => this.emit('unsubscribe', result), e => this.emit('error', e));
+    });
+  }
 
   /**
    * Subscribe this broker to some events.
@@ -18,10 +23,7 @@ export default abstract class Broker extends EventEmitter {
    * @param {...*} args Any other args the subscription might require
    * @returns {*}
    */
-  public subscribe(events: string | Iterable<string>, ...args: any[]): any {
-    if (typeof events === 'string') events = [events];
-    for (const e of events) this.events.add(e);
-  }
+  protected abstract subscribe(event: string): Promise<any>;
 
   /**
    * Unsubscribe this broker from some events.
@@ -29,19 +31,7 @@ export default abstract class Broker extends EventEmitter {
    * @param {...*} args Any other args the unsubscription might take
    * @returns {*}
    */
-  public unsubscribe(events: string | Iterable<string>, ...args: any[]): any {
-    if (typeof events === 'string') events = [events];
-    for (const e of events) this.events.delete(e);
-  }
-
-  /**
-   * Connect this broker to wherever it sends and receives messages.
-   * @param {string} url The URL to connect to
-   * @param {...*} args Any args the connection might take
-   * @returns {*}
-   * @abstract
-   */
-  public abstract connect(url: string, ...args: any[]): any;
+  protected abstract unsubscribe(event: string): Promise<any>;
 
   /**
    * Publish an event to this broker. Will be emitted on subscribed brokers.
@@ -49,5 +39,5 @@ export default abstract class Broker extends EventEmitter {
    * @param {*} data The data of the event
    * @param {...*} args Any other args the publishing might take
    */
-  public abstract publish(event: string, data: any, ...args: any[]): any;
+  public abstract publish(event: string, data: any, ...args: any[]): Promise<any>;
 }

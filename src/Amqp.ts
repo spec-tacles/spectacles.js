@@ -8,6 +8,8 @@ import { EventEmitter } from 'events';
 export interface AmqpOptions {
   rpc?: boolean;
   reconnectTimeout?: number;
+  consume?: amqp.Options.Consume,
+  assert?: amqp.Options.AssertQueue,
 }
 
 /**
@@ -15,16 +17,6 @@ export interface AmqpOptions {
  * @extends Broker
  */
 export default class Amqp extends Broker {
-  /**
-   * Whether this broker is in RPC mode: must be specified on all brokers that use RPC.
-   */
-  public rpc: boolean;
-
-  /**
-   * How long to wait before attempting a reconnection.
-   */
-  public reconnectTimeout: number;
-
   /**
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
@@ -49,6 +41,8 @@ export default class Amqp extends Broker {
    * @type {string}
    */
   public subgroup: string = '';
+
+  public options: AmqpOptions;
 
   /**
    * The consumers that this broker has registered.
@@ -83,8 +77,7 @@ export default class Amqp extends Broker {
     if (typeof subgroup === 'object') options = subgroup;
     else if (typeof subgroup === 'string') this.subgroup = subgroup;
 
-    this.rpc = options.rpc || false;
-    this.reconnectTimeout = options.reconnectTimeout || 1e4;
+    this.options = options;
   }
 
   /**
@@ -102,14 +95,14 @@ export default class Amqp extends Broker {
         connection = await amqp.connect(`amqp://${urlOrConn}`, options);
       } catch (e) {
         this.emit('close', e);
-        await new Promise(r => setTimeout(r, this.reconnectTimeout));
+        await new Promise(r => setTimeout(r, this.options.reconnectTimeout));
         continue;
       }
 
       connection.on('close', (err) => {
         if (!isFatalError(err)) {
           this.emit('close', err);
-          setTimeout(() => this.connect(urlOrConn, options), this.reconnectTimeout);
+          setTimeout(() => this.connect(urlOrConn, options), this.options.reconnectTimeout);
         }
       });
 
@@ -138,38 +131,27 @@ export default class Amqp extends Broker {
    * @param {amqp.Options.AssertQueue} [options.assert] Options to pass to the queue assertion
    * @returns {Promise<amqp.Replies.Consume[]>}
    */
-  public subscribe(events: string | Iterable<string>, options: {
-    consume?: amqp.Options.Consume,
-    assert?: amqp.Options.AssertQueue,
-  } = {}): Promise<amqp.Replies.Consume[]> {
-    super.subscribe(events);
+  protected async subscribe(event: string): Promise<amqp.Replies.Consume> {
+    // setup queue
+    const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
+    await this._channel.assertQueue(queue, this.options.assert);
+    await this._channel.bindQueue(queue, this.group, event);
 
-    if (typeof events === 'string') events = [events];
-    if (!Array.isArray(events)) events = Array.from(events);
+    // register consumer
+    const consumer = await this._channel.consume(queue, msg => {
+      // emit consumed messages with an acknowledger function
+      if (msg) {
+        this.emit(event, decode(msg.content), {
+          reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
+          ack: () => this._channel.ack(msg),
+          nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
+          reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
+        });
+      }
+    }, this.options.consume);
 
-    // register consumers in parallel
-    return Promise.all((events as Array<string>).map(async event => {
-      // setup queue
-      const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
-      await this._channel.assertQueue(queue, options.assert);
-      await this._channel.bindQueue(queue, this.group, event);
-
-      // register consumer
-      const consumer = await this._channel.consume(queue, msg => {
-        // emit consumed messages with an acknowledger function
-        if (msg) {
-          this.emit(event, decode(msg.content), {
-            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
-            ack: () => this._channel.ack(msg),
-            nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
-            reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
-          });
-        }
-      }, options.consume);
-
-      this._consumers[event] = consumer.consumerTag;
-      return consumer;
-    }));
+    this._consumers[event] = consumer.consumerTag;
+    return consumer;
   }
 
   /**
@@ -177,19 +159,14 @@ export default class Amqp extends Broker {
    * @param {string | string[]} events The channels to unsubscribe from
    * @returns {Promise<Array<undefined>>}
    */
-  public unsubscribe(events: string | string[]): Promise<void[]> {
-    super.unsubscribe(events);
+  public async unsubscribe(event: string): Promise<boolean> {
+    if (this._consumers[event]) {
+      await this._channel.cancel(this._consumers[event]);
+      delete this._consumers[event];
+      return true;
+    }
 
-    if (typeof events === 'string') events = [events];
-    return Promise.all(events.map(chan => {
-      if (this._consumers[chan]) {
-        const cancel = this._channel.cancel(this._consumers[chan]);
-        delete this._consumers[chan];
-        return cancel;
-      }
-
-      return Promise.resolve();
-    }) as Promise<void>[]);
+    return false;
   }
 
   /**
@@ -205,7 +182,7 @@ export default class Amqp extends Broker {
       correlationId: correlation,
     }));
 
-    if (!this.rpc) return;
+    if (!this.options.rpc) return;
     return new Promise((resolve, reject) => {
       let timeout: NodeJS.Timer | undefined;
 
