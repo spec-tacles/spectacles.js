@@ -207,13 +207,13 @@ export default class Amqp extends Broker {
 
     if (!this.rpc) return;
     return new Promise((resolve, reject) => {
-      let timeout: number | undefined;
+      let timeout: NodeJS.Timer | undefined;
 
       if (options.expiration) {
         timeout = setTimeout(() => {
           this._responses.removeListener(correlation, listener);
           reject(new Error('AMQP callback exceeded time limit'));
-        }, options.expiration);
+        }, Number(options.expiration));
       }
 
       const listener = (response: any) => {
