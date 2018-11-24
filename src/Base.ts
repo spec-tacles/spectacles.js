@@ -5,17 +5,35 @@ import { EventEmitter } from 'events';
  * @abstract
  */
 export default abstract class Broker extends EventEmitter {
+  public ignore: Set<string | symbol> = new Set([
+    'error',
+    'subscribe',
+    'unsubscribe',
+    'newListener',
+    'removeListener',
+  ]);
+
   constructor() {
     super();
 
     this.on('newListener', (event) => {
+      if (this.ignore.has(event)) return;
       this.subscribe(event).then(result => this.emit('subscribe', result), e => this.emit('error', e));
     });
 
     this.on('removeListener', (event) => {
+      if (this.ignore.has(event)) return;
       this.unsubscribe(event).then(result => this.emit('unsubscribe', result), e => this.emit('error', e));
     });
   }
+
+  /**
+   * Publish an event to this broker. Will be emitted on subscribed brokers.
+   * @param {string} event The event to publish
+   * @param {*} data The data of the event
+   * @param {...*} args Any other args the publishing might take
+   */
+  public abstract publish(event: string, data: any): Promise<any>;
 
   /**
    * Subscribe this broker to some events.
@@ -32,12 +50,4 @@ export default abstract class Broker extends EventEmitter {
    * @returns {*}
    */
   protected abstract unsubscribe(event: string): Promise<any>;
-
-  /**
-   * Publish an event to this broker. Will be emitted on subscribed brokers.
-   * @param {string} event The event to publish
-   * @param {*} data The data of the event
-   * @param {...*} args Any other args the publishing might take
-   */
-  public abstract publish(event: string, data: any, ...args: any[]): Promise<any>;
 }
