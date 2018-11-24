@@ -48,7 +48,6 @@ export default class RedisBroker extends Broker {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
-  public rpc: boolean;
 
   protected _listening: boolean = false;
   protected _streamReadClient: Redis.Redis;

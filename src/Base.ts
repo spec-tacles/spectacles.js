@@ -13,6 +13,8 @@ export default abstract class Broker extends EventEmitter {
     'removeListener',
   ]);
 
+  public rpc: boolean = false;
+
   constructor() {
     super();
 

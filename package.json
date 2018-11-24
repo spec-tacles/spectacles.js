@@ -41,8 +41,5 @@
     "jsdoc": "^3.5.5",
     "merge2": "^1.2.2",
     "typescript": "^3.0.3"
-  },
-  "optionalDependencies": {
-    "ws": "^4.0.0"
   }
 }

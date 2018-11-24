@@ -1,4 +1,5 @@
 import Broker from './Base';
+import { decode } from '@spectacles/util';
 
 /**
  * A local message broker; emits events on itself.
@@ -13,8 +14,11 @@ export default class Local extends Broker {
    */
   public publish(event: string, data: any): Promise<void> {
     if (this.eventNames().includes(event)) {
-      if (Buffer.isBuffer(data)) data = JSON.parse(data.toString());
-      this.emit(event, data, { ack: () => {} });
+      return new Promise((resolve) => {
+        if (Buffer.isBuffer(data)) data = decode(data.toString());
+        this.emit(event, data, { ack: () => {}, reply: resolve });
+        if (!this.rpc) resolve();
+      });
     }
 
     return Promise.resolve();
