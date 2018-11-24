@@ -10,7 +10,6 @@ export interface AmqpOptions {
   reconnectTimeout?: number;
   consume?: amqp.Options.Consume,
   assert?: amqp.Options.AssertQueue,
-  publish?: amqp.Options.Publish,
 }
 
 /**
@@ -176,9 +175,9 @@ export default class Amqp extends Broker {
    * @param {*} data The data to publish
    * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
-  public publish(event: string, data: any): Promise<any | void> {
+  public publish(event: string, data: any, options: amqp.Options.Publish = {}): Promise<any | void> {
     const correlation = randomBytes(20).toString('hex');
-    this._channel.publish(this.group, event, encode(data), Object.assign(this.options.publish || {}, {
+    this._channel.publish(this.group, event, encode(data), Object.assign(options || {}, {
       replyTo: this.callback,
       correlationId: correlation,
     }));
@@ -187,11 +186,11 @@ export default class Amqp extends Broker {
     return new Promise((resolve, reject) => {
       let timeout: NodeJS.Timer | undefined;
 
-      if (this.options.publish && this.options.publish.expiration) {
+      if (options && options.expiration) {
         timeout = setTimeout(() => {
           this._responses.removeListener(correlation, listener);
           reject(new Error('AMQP callback exceeded time limit'));
-        }, Number(this.options.publish.expiration));
+        }, Number(options.expiration));
       }
 
       const listener = (response: any) => {
