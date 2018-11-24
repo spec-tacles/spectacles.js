@@ -80,7 +80,6 @@ export default class RedisBroker extends Broker {
       if (events.every(name => this.listenerCount(name) === 0)) break;
 
       try {
-        console.time('xreadgroup');
         let data: ReadGroupResponse | null = await this._subClient.xreadgroup(
           'GROUP', this.group, this.name,
           'COUNT', String(this.maxChunk),
@@ -88,7 +87,6 @@ export default class RedisBroker extends Broker {
           'STREAMS', ...events.map(String),
           ...Array(events.length).fill('>'),
         );
-        console.timeEnd('xreadgroup');
 
         /*
         data = {
