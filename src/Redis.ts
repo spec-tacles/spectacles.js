@@ -62,7 +62,7 @@ export default class RedisBroker extends Broker {
       if (!(e instanceof (Redis as any).ReplyError)) throw e;
     }
 
-    setImmediate(() => this._listen());
+    this._listen();
   }
 
   protected async unsubscribe(event: string): Promise<void> {
