@@ -1,7 +1,7 @@
 {
   "name": "@spectacles/brokers",
-  "version": "0.4.5",
-  "description": "Brokers for use in Spectacles applications.",
+  "version": "0.5.0",
+  "description": "Brokers for easy RPC.",
   "main": "dist/index.js",
   "scripts": {
     "start:amqp": "gulp && node --trace-warnings test/amqp.js",
@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+https://github.com/spec-tacles/brokers.git"
   },
-  "author": "",
+  "author": "Will Nelson <will@pleb.xyz>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/spec-tacles/brokers/issues"
