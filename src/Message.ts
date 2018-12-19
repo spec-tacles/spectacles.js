@@ -111,6 +111,7 @@ export interface MessageApplication {
 export default interface Message {
   id: string;
   channel_id: string;
+  guild_id?: string;
   author: User;
   content: string;
   timestamp: string;
