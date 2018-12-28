@@ -5,6 +5,8 @@ A unified event publishing API to allow simple and powerful communication betwee
 - AMQP - connects to an AMQP server
 - Local - keeps events on a local event emitter
 
+Attaching event listeners will automatically subscribe the broker to those events; make sure to attach listeners after connecting.
+
 ## How to use
 
 ```js
@@ -25,8 +27,6 @@ const broker = new Amqp('some group name', { rpc: true });
     ack();
     reply('cool reply 2');
   });
-
-  await broker.subscribe(['some', 'events']);
 
   console.log(await broker.publish('some', 'meme')); // cool reply 1
   console.log(await broker.publish('events', 'meme2')); // cool reply 2
