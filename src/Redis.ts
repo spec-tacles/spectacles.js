@@ -48,6 +48,12 @@ export default class RedisBroker extends Broker {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
+  public ignore: Set<string | symbol> = new Set([
+    'newListener',
+    'removeListener',
+    'subscribe',
+    'unsubscribe',
+  ]);
 
   protected _listening: boolean = false;
   protected _streamReadClient: Redis.Redis;
@@ -80,7 +86,6 @@ export default class RedisBroker extends Broker {
     }
 
     this._streamReadClient = redis.duplicate();
-    this._listen();
   }
 
   public async publish(event: string, data: object, options: PublishOptions = {}): Promise<any> {
@@ -108,17 +113,21 @@ export default class RedisBroker extends Broker {
     return id;
   }
 
-  protected async subscribe(event: string): Promise<void> {
-    try {
-      await this.redis.xgroup('CREATE', event, this.group, 0, 'MKSTREAM');
-    } catch (e) {
-      if (!(e instanceof (Redis as any).ReplyError)) throw e;
-    }
+  public async subscribe(events: string | string[]): Promise<void> {
+    if (!Array.isArray(events)) events = [events];
+
+    await Promise.all(events.map(async event => {
+      try {
+        await this.redis.xgroup('CREATE', event, this.group, 0, 'MKSTREAM');
+      } catch (e) {
+        if (!(e instanceof (Redis as any).ReplyError)) throw e;
+      }
+    }));
 
     this._listen();
   }
 
-  protected async unsubscribe(event: string): Promise<void> {
+  public async unsubscribe(event: string): Promise<void> {
     await this.redis.xgroup('DELCONSUMER', event, this.group, this.name);
     await this.redis.xcleangroup(event, this.group);
   }

@@ -131,27 +131,31 @@ export default class Amqp extends Broker {
    * @param {amqp.Options.AssertQueue} [options.assert] Options to pass to the queue assertion
    * @returns {Promise<amqp.Replies.Consume[]>}
    */
-  protected async subscribe(event: string): Promise<amqp.Replies.Consume> {
-    // setup queue
-    const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
-    await this._channel.assertQueue(queue, this.options.assert);
-    await this._channel.bindQueue(queue, this.group, event);
+  public async subscribe(events: string | string[]): Promise<amqp.Replies.Consume[]> {
+    if (!Array.isArray(events)) events = [events];
 
-    // register consumer
-    const consumer = await this._channel.consume(queue, msg => {
-      // emit consumed messages with an acknowledger function
-      if (msg) {
-        this.emit(event, decode(msg.content), {
-          reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
-          ack: () => this._channel.ack(msg),
-          nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
-          reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
-        });
-      }
-    }, this.options.consume);
+    return Promise.all(events.map(async event => {
+      // setup queue
+      const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
+      await this._channel.assertQueue(queue, this.options.assert);
+      await this._channel.bindQueue(queue, this.group, event);
 
-    this._consumers[event] = consumer.consumerTag;
-    return consumer;
+      // register consumer
+      const consumer = await this._channel.consume(queue, msg => {
+        // emit consumed messages with an acknowledger function
+        if (msg) {
+          this.emit(event, decode(msg.content), {
+            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
+            ack: () => this._channel.ack(msg),
+            nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
+            reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
+          });
+        }
+      }, this.options.consume);
+
+      this._consumers[event] = consumer.consumerTag;
+      return consumer;
+    }));
   }
 
   /**
@@ -159,14 +163,17 @@ export default class Amqp extends Broker {
    * @param {string | string[]} events The channels to unsubscribe from
    * @returns {Promise<Array<undefined>>}
    */
-  public async unsubscribe(event: string): Promise<boolean> {
-    if (this._consumers[event]) {
-      await this._channel.cancel(this._consumers[event]);
-      delete this._consumers[event];
-      return true;
-    }
+  public async unsubscribe(events: string | string[]): Promise<boolean[]> {
+    if (!Array.isArray(events)) events = [events];
+    return Promise.all(events.map(async event => {
+      if (this._consumers[event]) {
+        await this._channel.cancel(this._consumers[event]);
+        delete this._consumers[event];
+        return true;
+      }
 
-    return false;
+      return false;
+    }))
   }
 
   /**

@@ -24,11 +24,11 @@ export default class Local extends Broker {
     return Promise.resolve();
   }
 
-  protected subscribe(): Promise<void> {
+  public subscribe(): Promise<void> {
     return Promise.resolve();
   }
 
-  protected unsubscribe(): Promise<void> {
+  public unsubscribe(): Promise<void> {
     return Promise.resolve();
   }
 }
