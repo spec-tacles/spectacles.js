@@ -9,6 +9,8 @@
       "dom"
     ],
     "declaration": true,
+    "outDir": "dist",
+    "declarationDir": "typings",
     "sourceMap": true,
     "removeComments": false
   },

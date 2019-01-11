@@ -1,17 +1,15 @@
-let erlpack: { pack: (d: any) => Buffer, unpack: (d: Buffer | Uint8Array) => any } | void;
-try {
-  erlpack = require('erlpack');
-} catch (e) {
-  // do nothing
+let erlpack: { pack: (d: any) => Buffer, unpack: (d: Buffer | Uint8Array) => any } | undefined;
+if (typeof window === 'undefined') {
+  try {
+    erlpack = require('erlpack');
+  } catch {}
 }
 
 import * as Errors from './errors';
-import * as Constants from './constants';
 import Permissions from './Permissions';
 
 export {
   Errors,
-  Constants,
   Permissions,
 };
 
@@ -25,10 +23,13 @@ export function encode(data: any): Buffer {
 export function decode<T = any>(data: ArrayBuffer | string | Buffer[] | Buffer | Uint8Array): T {
   if (data instanceof ArrayBuffer) data = Buffer.from(data);
   else if (Array.isArray(data)) data = Buffer.concat(data);
-  else if (typeof data === 'string') data = Buffer.from(data);
 
-  if (erlpack) return erlpack.unpack(data);
+  if (erlpack) {
+    if (typeof data === 'string') data = Buffer.from(data);
+    return erlpack.unpack(data as Uint8Array | Buffer); // TS doesn't type guard "data" as not being an instance of ArrayBuffer
+  }
 
-  if (!Buffer.isBuffer(data)) data = Buffer.from(data);
-  return JSON.parse(data.toString());
+  if (Buffer.isBuffer(data)) data = data.toString();
+  else if (typeof data !== 'string') data = Buffer.from(data).toString();
+  return JSON.parse(data);
 }
