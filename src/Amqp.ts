@@ -1,7 +1,6 @@
 import { encode, decode } from '@spectacles/util';
 import * as amqp from 'amqplib';
 const { isFatalError } = require('amqplib/lib/connection');
-import { randomBytes } from 'crypto';
 import Broker from './Base';
 import { EventEmitter } from 'events';
 
@@ -183,7 +182,7 @@ export default class Amqp extends Broker {
    * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
   public publish(event: string, data: any, options: amqp.Options.Publish = {}): Promise<any | void> {
-    const correlation = randomBytes(20).toString('hex');
+    const correlation = Broker.randomString();
     this._channel.publish(this.group, event, encode(data), Object.assign(options || {}, {
       replyTo: this.callback,
       correlationId: correlation,
