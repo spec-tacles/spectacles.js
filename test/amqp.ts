@@ -1,4 +1,4 @@
-const { Amqp } = require('../dist');
+import { Amqp } from '../src';
 
 const broker = new Amqp('test', 'subtest', { rpc: true });
 const broker2 = new Amqp('test', { rpc: true });

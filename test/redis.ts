@@ -1,5 +1,5 @@
-const { Redis } = require('../dist');
-const RedisClient = require('ioredis');
+import { Redis } from '../src';
+import RedisClient = require('ioredis');
 
 const client = new RedisClient({ showFriendlyErrorStack: true });
 const broker = new Redis('test', client, { rpc: true });

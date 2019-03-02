@@ -1,4 +1,4 @@
-const { Ipc } = require('../dist');
+import { Ipc } from '../src';
 
 const server = new Ipc();
 server.subscribe('hello');

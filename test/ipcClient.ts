@@ -1,5 +1,5 @@
-const { fork } = require('child_process');
-const { Ipc } = require('../dist');
+import { fork } from 'child_process';
+import { Ipc } from '../src';
 
 const client = new Ipc(fork('./test/ipcServer'));
 client.publish('hello', 'world');
