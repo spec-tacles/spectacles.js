@@ -24,7 +24,9 @@
     "@spectacles/util": "^0.2.3",
     "amqplib": "^0.5.2",
     "ioredis": "^4.2.0",
-    "lodash": "^4.17.11"
+    "lodash": "^4.17.11",
+    "nanoid": "^2.0.1",
+    "ulid": "^2.3.0"
   },
   "devDependencies": {
     "@spectacles/types": "^0.2.0",

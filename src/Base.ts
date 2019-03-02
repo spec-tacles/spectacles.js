@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 
 /**
@@ -6,10 +5,6 @@ import { EventEmitter } from 'events';
  * @abstract
  */
 export default abstract class Broker extends EventEmitter {
-  public static randomString(size: number = 20): string {
-    return randomBytes(size).toString('hex');
-  }
-
   public rpc: boolean = false;
 
   /**

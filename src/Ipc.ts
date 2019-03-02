@@ -1,5 +1,6 @@
 import Broker from './Base';
 import { ChildProcess } from 'child_process';
+import { ulid } from 'ulid';
 
 export interface IpcMessage {
   event: string;
@@ -32,7 +33,7 @@ export default class Ipc extends Broker {
     return new Promise<unknown>((resolve, reject) => {
       const message: IpcMessage = { event, data };
       if (this.rpc) {
-        message.key = Broker.randomString();
+        message.key = ulid();
         this._callbacks[message.key] = resolve;
       }
 
