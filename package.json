@@ -9,7 +9,7 @@
     "prepare": "rimraf typings dist && tsc",
     "docs": "jsdoc -R README.md -c jsdoc.json"
   },
-  "types": "typings/index.d.ts",
+  "types": "typings/src/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/spec-tacles/brokers.git"
