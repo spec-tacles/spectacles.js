@@ -21,7 +21,6 @@ export interface PublishOptions {
 }
 
 export interface ClientOptions {
-  rpc?: boolean;
   blockInterval?: number;
   maxChunk?: number;
   name?: string;
@@ -44,21 +43,14 @@ Redis.Command.setArgumentTransformer('xadd', (args) => {
   return args;
 });
 
-export default class RedisBroker extends Broker {
+export default class RedisBroker<Send = any, Receive = any> extends Broker<Send, Receive> {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
-  public ignore: Set<string | symbol> = new Set([
-    'newListener',
-    'removeListener',
-    'subscribe',
-    'unsubscribe',
-  ]);
 
   protected _listening: boolean = false;
   protected _streamReadClient: Redis.Redis;
-  protected _rpcReadClient?: Redis.Redis;
-  protected _responses: EventEmitter = new EventEmitter();
+  protected _rpcReadClient: Redis.Redis;
 
   constructor(public group: string, public redis: Redis.Redis, options: ClientOptions = {}) {
     super();
@@ -66,56 +58,38 @@ export default class RedisBroker extends Broker {
     this.name = options.name || randomBytes(20).toString('hex');
     this.blockInterval = options.blockInterval || 5000;
     this.maxChunk = options.maxChunk || 10;
-    this.rpc = options.rpc || false;
 
     redis.defineCommand('xcleangroup', {
       numberOfKeys: 1,
-      lua: readFileSync(resolve(__dirname, '..', 'scripts', 'xcleangroup.lua')).toString(),
+      lua: readFileSync(resolve(__dirname, '..', '..', 'scripts', 'xcleangroup.lua')).toString(),
     });
 
-    if (this.rpc) {
-      this._rpcReadClient = redis.duplicate();
-      this._rpcReadClient.on('messageBuffer', (channel: Buffer, message: Buffer) => {
-        const [, id] = channel.toString().split(':');
-
-        if (id) {
-          const data = decode(message);
-          this._responses.emit(id, data);
-        }
-      });
-    }
+    this._rpcReadClient = redis.duplicate();
+    this._rpcReadClient.on('messageBuffer', (channel: Buffer, message: Buffer) => {
+      const [, id] = channel.toString().split(':');
+      if (id) this._handleMessage(id, message);
+    });
 
     this._streamReadClient = redis.duplicate();
   }
 
-  public async publish(event: string, data: object, options: PublishOptions = {}): Promise<any> {
-    const id: string = await this.redis.xadd(event, '*', data);
-
-    if (this.rpc && this._rpcReadClient) {
-      const rpcChannel = `${event}:${id}`;
-      await this._rpcReadClient.subscribe(rpcChannel);
-
-      try {
-        return await new Promise((resolve, reject) => {
-          this._responses.once(id, resolve);
-          if (options.timeout) {
-            setTimeout(() => {
-              this._responses.removeListener(id, resolve);
-              reject(new Error('Redis RPC callback timed out'));
-            }, options.timeout);
-          }
-        });
-      } finally {
-        this._rpcReadClient.unsubscribe(rpcChannel);
-      }
-    }
-
-    return id;
+  public publish(event: string, data: Send): Promise<string> {
+    return this.redis.xadd(event, '*', data);
   }
 
-  public async subscribe(events: string | string[]): Promise<void> {
-    if (!Array.isArray(events)) events = [events];
+  public async call(method: string, data: Send, options: PublishOptions = {}): Promise<Receive> {
+    const id = await this.publish(method, data);
+    const rpcChannel = `${method}:${id}`;
+    await this._rpcReadClient.subscribe(rpcChannel);
 
+    try {
+      return await this._awaitResponse(id, options.timeout);
+    } finally {
+      this._rpcReadClient.unsubscribe(rpcChannel);
+    }
+  }
+
+  protected async _subscribe(events: string[]): Promise<void> {
     await Promise.all(events.map(async event => {
       try {
         await this.redis.xgroup('CREATE', event, this.group, 0, 'MKSTREAM');
@@ -127,26 +101,31 @@ export default class RedisBroker extends Broker {
     this._listen();
   }
 
-  public async unsubscribe(event: string): Promise<void> {
-    await this.redis.xgroup('DELCONSUMER', event, this.group, this.name);
-    await this.redis.xcleangroup(event, this.group);
+  protected async _unsubscribe(events: string[]): Promise<void> {
+    const cmds: string[][] = Array(events.length * 2);
+    for (let i = 0; i < cmds.length; i += 2) {
+      const event = events[i / 2];
+      cmds[i] = ['xgroup', 'delconsumer', event, this.group, this.name];
+      cmds[i+1] = ['xcleangroup', event, this.group];
+    }
+
+    await this.redis.pipeline(cmds).exec();
   }
 
   private async _listen(): Promise<void> {
     if (this._listening) return;
     this._listening = true;
 
-    let events: Array<string | symbol>;
+    let events: Array<string>;
     while (true) {
-      events = this.eventNames().filter(e => !this.ignore.has(e));
-      if (events.every(name => this.listenerCount(name) === 0)) break;
+      events = Object.keys(this.handlers);
 
       try {
         let data: ReadGroupResponse | null = await this._streamReadClient.xreadgroup(
           'GROUP', this.group, this.name,
           'COUNT', String(this.maxChunk),
           'BLOCK', String(this.blockInterval),
-          'STREAMS', ...events.map(String),
+          'STREAMS', ...events,
           ...Array(events.length).fill('>'),
         );
 
@@ -162,12 +141,15 @@ export default class RedisBroker extends Broker {
         for (const [event, info] of data) {
           for (const [id, packet] of info) {
             let i = 0;
-            const obj = zipObject(...partition(packet, () => i++ % 2 === 0));
+            const obj = zipObject(...partition(packet, () => i++ % 2 === 0)) as unknown as Receive;
 
-            this.emit(event, obj, {
-              ack: () => this.redis.xack(event, this.group, id),
-              reply: (data: any) => this.redis.publish(`${event}:${id}`, encode(data) as any),
-            });
+            this.redis.xack(event, this.group, id);
+            try {
+              const res = await this._handleMessage(event, obj);
+              await this.redis.publish(`${event}:${id}`, encode(res) as any);
+            } catch (e) {
+              this.emit('error', e);
+            }
           }
         }
       } catch (e) {

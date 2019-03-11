@@ -1,6 +1,5 @@
 import { Ipc } from '../src';
 
 const server = new Ipc();
-server.subscribe('hello');
-server.on('hello', m => console.log(m));
+server.subscribe('hello', (event, m) => console.log(event, m));
 server.publish('foo', 'bar');

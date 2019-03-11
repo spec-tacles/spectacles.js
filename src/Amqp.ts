@@ -1,12 +1,10 @@
-import { encode, decode } from '@spectacles/util';
+import { encode } from '@spectacles/util';
 import * as amqp from 'amqplib';
 import { ulid } from 'ulid';
 const { isFatalError } = require('amqplib/lib/connection');
 import Broker from './Base';
-import { EventEmitter } from 'events';
 
 export interface AmqpOptions {
-  rpc?: boolean;
   reconnectTimeout?: number;
   consume?: amqp.Options.Consume,
   assert?: amqp.Options.AssertQueue,
@@ -16,7 +14,7 @@ export interface AmqpOptions {
  * A broker for AMQP clients. Probably most useful for RabbitMQ.
  * @extends Broker
  */
-export default class Amqp extends Broker {
+export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Receieve> {
   /**
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
@@ -50,13 +48,6 @@ export default class Amqp extends Broker {
    * @private
    */
   private _consumers: { [event: string]: string } = {};
-
-  /**
-   * RPC responses this broker receives.
-   * @type {EventEmitter}
-   * @private
-   */
-  private _responses: EventEmitter = new EventEmitter();
 
   /**
    * @constructor
@@ -116,7 +107,7 @@ export default class Amqp extends Broker {
     // setup RPC callback queue
     this.callback = (await this.channel.assertQueue('', { exclusive: true })).queue;
     this.channel.consume(this.callback, (msg) => {
-      if (msg) this._responses.emit(msg.properties.correlationId, decode(msg.content));
+      if (msg) this._handleMessage(msg.properties.correlationId, msg.content);
     }, { noAck: true });
 
     await this.channel.assertExchange(this.group, 'direct');
@@ -131,9 +122,7 @@ export default class Amqp extends Broker {
    * @param {amqp.Options.AssertQueue} [options.assert] Options to pass to the queue assertion
    * @returns {Promise<amqp.Replies.Consume[]>}
    */
-  public async subscribe(events: string | string[]): Promise<amqp.Replies.Consume[]> {
-    if (!Array.isArray(events)) events = [events];
-
+  protected async _subscribe(events: string[]): Promise<amqp.Replies.Consume[]> {
     return Promise.all(events.map(async event => {
       // setup queue
       const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
@@ -141,15 +130,17 @@ export default class Amqp extends Broker {
       await this._channel.bindQueue(queue, this.group, event);
 
       // register consumer
-      const consumer = await this._channel.consume(queue, msg => {
+      const consumer = await this._channel.consume(queue, async msg => {
         // emit consumed messages with an acknowledger function
         if (msg) {
-          this.emit(event, decode(msg.content), {
-            reply: (response: any = null) => this._channel.sendToQueue(msg.properties.replyTo, encode(response), { correlationId: msg.properties.correlationId }),
-            ack: () => this._channel.ack(msg),
-            nack: (allUpTo?: boolean, requeue?: boolean) => this._channel.nack(msg, allUpTo, requeue),
-            reject: (requeue?: boolean) => this._channel.reject(msg, requeue),
-          });
+          try {
+            this._channel.ack(msg);
+            const res = await this._handleMessage(event, msg.content);
+            if (res) this._channel.sendToQueue(msg.properties.replyTo, res, { correlationId: msg.properties.correlationId });
+          } catch (e) {
+            this._channel.reject(msg, false);
+            this.emit('error', e);
+          }
         }
       }, this.options.consume);
 
@@ -163,8 +154,7 @@ export default class Amqp extends Broker {
    * @param {string | string[]} events The channels to unsubscribe from
    * @returns {Promise<Array<undefined>>}
    */
-  public async unsubscribe(events: string | string[]): Promise<boolean[]> {
-    if (!Array.isArray(events)) events = [events];
+  protected async _unsubscribe(events: string[]): Promise<boolean[]> {
     return Promise.all(events.map(async event => {
       if (this._consumers[event]) {
         await this._channel.cancel(this._consumers[event]);
@@ -182,31 +172,18 @@ export default class Amqp extends Broker {
    * @param {*} data The data to publish
    * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
-  public publish(event: string, data: any, options: amqp.Options.Publish = {}): Promise<any | void> {
+  public publish(event: string, data: Send, options: amqp.Options.Publish = {}): void {
+    this._channel.publish(this.group, event, encode(data), options);
+  }
+
+  public call(method: string, data: Send, options: amqp.Options.Publish = {}): Promise<Receieve> {
     const correlation = ulid();
-    this._channel.publish(this.group, event, encode(data), Object.assign(options || {}, {
+    this.publish(method, data, Object.assign(options, {
       replyTo: this.callback,
       correlationId: correlation,
     }));
 
-    if (!this.options.rpc) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      let timeout: NodeJS.Timer | undefined;
-
-      if (options && options.expiration) {
-        timeout = setTimeout(() => {
-          this._responses.removeListener(correlation, listener);
-          reject(new Error('AMQP callback exceeded time limit'));
-        }, Number(options.expiration));
-      }
-
-      const listener = (response: any) => {
-        if (timeout) clearTimeout(timeout);
-        resolve(response);
-      };
-
-      this._responses.once(correlation, listener);
-    });
+    return this._awaitResponse(correlation, typeof options.expiration === 'string' ? parseInt(options.expiration, 10) : options.expiration);
   }
 
   /**

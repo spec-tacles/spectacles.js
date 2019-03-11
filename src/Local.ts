@@ -5,30 +5,29 @@ import { decode } from '@spectacles/util';
  * A local message broker; emits events on itself.
  * @extends Broker
  */
-export default class Local extends Broker {
+export default class Local<T> extends Broker<T, T> {
   /**
    * Publish an event to this broker.
    * @param {string} event The event to publish
    * @param {*} data The data to publish
    * @returns {undefined}
    */
-  public publish(event: string, data: any): Promise<void> {
-    if (this.eventNames().includes(event)) {
-      return new Promise((resolve) => {
-        if (Buffer.isBuffer(data)) data = decode(data.toString());
-        this.emit(event, data, { ack: () => {}, reply: resolve });
-        if (!this.rpc) resolve();
-      });
-    }
-
-    return Promise.resolve();
+  public async publish(event: string, data: T): Promise<T> {
+    await this._handleMessage(event, data);
+    return data;
   }
 
-  public subscribe(): Promise<void> {
-    return Promise.resolve();
+  public call(method: string, data: T): Promise<T> {
+    const res = this.publish(method, data);
+    if (res) return res;
+    return Promise.reject(new Error(`no handler for method ${method}`));
   }
 
-  public unsubscribe(): Promise<void> {
-    return Promise.resolve();
+  protected _subscribe(): void {
+    // do nothing
+  }
+
+  protected _unsubscribe(): void {
+    // do nothing
   }
 }

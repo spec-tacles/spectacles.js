@@ -1,5 +1,5 @@
 import Broker from './Base';
-import { ChildProcess } from 'child_process';
+import { ChildProcess, fork, ForkOptions } from 'child_process';
 import { ulid } from 'ulid';
 
 export interface IpcMessage {
@@ -8,67 +8,65 @@ export interface IpcMessage {
   key?: string;
 }
 
-export default class Ipc extends Broker {
-  private _events: Set<string> = new Set();
-  private _callbacks: { [key: string]: (data: unknown) => void } = {};
+export default class Ipc<Send = any, Receive = any> extends Broker<Send, Receive> {
+  public children: ChildProcess[] = [];
+  private _nextChildIndex = 0;
+  private _messageHandler = (message: IpcMessage) => {
+    this._handleMessage(message.event, message.data).then(res => {
+      if (res) return this._send({ event: message.event, data: res, key: message.key });
+    }, err => this.emit('error', err));
+  };
 
-  constructor(public child?: ChildProcess) {
+  constructor() {
     super();
-    const listener = (message: IpcMessage) => {
-      if (message.key && this._callbacks[message.key]) {
-        this._callbacks[message.key](message.data);
-        delete this._callbacks[message.key];
-      } else if (this._events.has(message.event)) {
-        this.emit(message.event, message.data, {
-          reply: (data: any) => message.key ? this._send({ event: message.event, data, key: message.key }) : null,
-        });
-      }
-    };
+    process.on('message', this._messageHandler);
+  }
 
-    if (child) child.on('message', listener);
-    else process.on('message', listener);
+  public fork(proc: ChildProcess): void;
+  public fork(dir: string, args?: ReadonlyArray<string>, options?: ForkOptions): void;
+  public fork(dir: string | ChildProcess, args?: ReadonlyArray<string>, options?: ForkOptions): void {
+    const child = typeof dir === 'string' ? fork(dir, args, options) : dir;
+    child.on('message', this._messageHandler);
+    this.children.push(child);
   }
 
   public publish(event: string, data: any): Promise<unknown> {
-    return new Promise<unknown>((resolve, reject) => {
-      const message: IpcMessage = { event, data };
-      if (this.rpc) {
-        message.key = ulid();
-        this._callbacks[message.key] = resolve;
-      }
-
-      this._send(message).then(resolve, reject);
-    });
+    return this._send({ event, data });
   }
 
-  public subscribe(events: string | string[]): Promise<void> {
-    if (Array.isArray(events)) for (const event of events) this._events.add(event);
-    else this._events.add(events);
-    return Promise.resolve();
+  public call(method: string, data: Send): Promise<Receive> {
+    const key = ulid();
+    this._send({ event: method, data, key });
+    return this._awaitResponse(key);
   }
 
-  public unsubscribe(events: string | string[]): Promise<void> {
-    if (Array.isArray(events)) for (const event of events) this._events.delete(event);
-    else this._events.delete(events);
-    return Promise.resolve();
+  protected _subscribe(): void {
+    // do nothing
+  }
+
+  protected _unsubscribe(): void {
+    // do nothing
+  }
+
+  private _nextChild(): ChildProcess | null {
+    if (!this.children.length) return null;
+    if (this._nextChildIndex >= this.children.length) this._nextChildIndex = 0;
+    return this.children[this._nextChildIndex++];
   }
 
   private _send(message: IpcMessage): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      if (this.child) {
-        this.child.send(message, (err) => {
-          if (err) {
-            reject(err);
-            if (message.key && this._callbacks[message.key]) delete this._callbacks[message.key];
-          } else if (!this.rpc) {
-            resolve();
-          }
+      const child = this._nextChild();
+      if (child) {
+        child.send(message, (err) => {
+          if (err) reject(err)
+          else resolve();
         });
       } else if (process.send) {
         process.send(message);
         resolve();
       } else {
-        reject(new Error('no child'));
+        reject(new Error('no children spawned and this is not a child process'));
       }
     });
   }

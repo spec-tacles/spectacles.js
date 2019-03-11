@@ -6,6 +6,7 @@
   "scripts": {
     "start:amqp": "npm run prepare && node --trace-warnings dist/test/amqp.js",
     "start:redis": "npm run prepare && node --trace-warnings dist/test/redis.js",
+    "start:ipc": "npm run prepare && node --trace-warnings dist/test/ipcClient.js",
     "prepare": "rimraf typings dist && tsc",
     "docs": "jsdoc -R README.md -c jsdoc.json"
   },
@@ -25,7 +26,6 @@
     "amqplib": "^0.5.2",
     "ioredis": "^4.2.0",
     "lodash": "^4.17.11",
-    "nanoid": "^2.0.1",
     "ulid": "^2.3.0"
   },
   "devDependencies": {
