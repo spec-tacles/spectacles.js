@@ -3,11 +3,9 @@
   "version": "0.3.1",
   "description": "Spectacles utility methods",
   "main": "dist/index.js",
-  "unpkg": "dist/bundle.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepare": "gulp",
-    "build:web": "gulp bundle"
+    "prepare": "rimraf dist typings && tsc"
   },
   "keywords": [
     "spectacles",
@@ -32,21 +30,10 @@
   "devDependencies": {
     "@spectacles/types": "^0.1.4",
     "@types/node": "^10.12.18",
-    "del": "^3.0.0",
-    "fs-nextra": "^0.3.8",
-    "gulp": "^4.0.0",
-    "gulp-sourcemaps": "^2.6.4",
-    "gulp-typescript": "^5.0.0",
-    "merge2": "^1.2.3",
-    "terser-webpack-plugin": "^1.2.1",
-    "ts-loader": "^5.3.3",
-    "typescript": "^3.2.2",
-    "webpack": "^4.28.4"
+    "rimraf": "^2.6.3",
+    "typescript": "^3.5.2"
   },
   "peerDependencies": {
     "erlpack": "github:discordapp/erlpack"
-  },
-  "browser": {
-    "erlpack": false
   }
 }

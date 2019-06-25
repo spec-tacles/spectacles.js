@@ -9,12 +9,10 @@
       "dom"
     ],
     "declaration": true,
-    "outDir": "dist",
-    "declarationDir": "typings",
     "sourceMap": true,
-    "removeComments": false
+    "removeComments": false,
+    "outDir": "./dist/",
+    "declarationDir": "./typings/"
   },
-  "include": [
-    "./src/"
-  ]
+  "include": ["./src/"]
 }
