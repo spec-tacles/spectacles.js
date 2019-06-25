@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/spec-tacles/brokers#readme",
   "dependencies": {
-    "@spectacles/util": "^0.2.3",
+    "@spectacles/util": "^0.3.2",
     "amqplib": "^0.5.2",
     "ioredis": "^4.2.0",
     "lodash": "^4.17.11",
