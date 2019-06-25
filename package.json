@@ -43,7 +43,7 @@
     "typescript": "^3.2.2",
     "webpack": "^4.28.4"
   },
-  "optionalDependencies": {
+  "peerDependencies": {
     "erlpack": "github:discordapp/erlpack"
   },
   "browser": {
