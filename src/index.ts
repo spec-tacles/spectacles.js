@@ -1,9 +1,11 @@
 import * as Errors from './errors';
 import Permissions from './Permissions';
+import Snowflake from './Snowflake';
 
 export {
   Errors,
   Permissions,
+  Snowflake,
 };
 
 export function encode(data: any): Buffer {
