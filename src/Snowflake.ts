@@ -1,7 +1,7 @@
 export default class Snowflake {
 	public static EPOCH = 1420070400000;
-	public static WORKER_ID = 0n;
-	public static INCREMENT = 0n;
+	public static WORKER_ID = 0;
+	public static INCREMENT = 0;
 
 	protected bin: bigint;
 
@@ -11,9 +11,10 @@ export default class Snowflake {
 		} else if (typeof bin === 'string') {
 			this.bin = BigInt(bin);
 		} else {
-			this.bin = Snowflake.INCREMENT++
+			if (Snowflake.INCREMENT > 0xFFF) Snowflake.INCREMENT = 0;
+			this.bin = BigInt(Snowflake.INCREMENT++)
 				| BigInt(process.pid << 12)
-				| (Snowflake.WORKER_ID << 17n)
+				| BigInt(Snowflake.WORKER_ID << 17)
 				| (BigInt(Date.now() - Snowflake.EPOCH) << 22n);
 		}
 	}
