@@ -14,4 +14,5 @@ const broker2 = new Amqp('test');
   });
 
   console.log('back', await broker.call('meme', 'hey der'));
+  console.log('back2', await broker.publish('meme', 'hey der'));
 })();

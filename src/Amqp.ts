@@ -122,7 +122,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * @param {amqp.Options.AssertQueue} [options.assert] Options to pass to the queue assertion
    * @returns {Promise<amqp.Replies.Consume[]>}
    */
-  protected async _subscribe(events: string[]): Promise<amqp.Replies.Consume[]> {
+  protected _subscribe(events: string[]): Promise<amqp.Replies.Consume[]> {
     return Promise.all(events.map(async event => {
       // setup queue
       const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
@@ -154,7 +154,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * @param {string | string[]} events The channels to unsubscribe from
    * @returns {Promise<Array<undefined>>}
    */
-  protected async _unsubscribe(events: string[]): Promise<boolean[]> {
+  protected _unsubscribe(events: string[]): Promise<boolean[]> {
     return Promise.all(events.map(async event => {
       if (this._consumers[event]) {
         await this._channel.cancel(this._consumers[event]);

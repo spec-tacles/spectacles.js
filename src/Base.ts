@@ -10,7 +10,7 @@ export interface SendOptions {
  * @abstract
  */
 export default abstract class Broker<Send, Receive> extends EventEmitter {
-  public handlers: { [name: string]: (data: Receive) => Promise<Send> | Send | void } = {};
+  public handlers: { [name: string]: (data: Receive) => Promise<Send | void> | Send | void } = {};
   private _responses: { [key: string]: (data: Receive) => void } = {};
 
   /**
@@ -58,15 +58,12 @@ export default abstract class Broker<Send, Receive> extends EventEmitter {
   protected async _handleMessage(event: string, message: Buffer | Receive): Promise<Buffer | undefined> {
     if (Buffer.isBuffer(message)) message = decode<Receive>(message);
     if (this.handlers[event]) {
-      let res = this.handlers[event](message);
-
-      if (res) {
-        try {
-          if (res instanceof Promise) res = await res;
-          return encode(res);
-        } catch (e) {
-          this.emit('error', e);
-        }
+      try {
+        let res = this.handlers[event](message);
+        if (res instanceof Promise) res = await res;
+        if (res) return encode(res);
+      } catch (e) {
+        this.emit('error', e);
       }
     } else if (this._responses[event]) {
       const res = this._responses[event];
