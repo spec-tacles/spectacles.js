@@ -9,9 +9,7 @@ export default class Snowflake {
 	}
 
 	public get createdAt(): Date {
-		const d = new Date();
-		d.setMilliseconds(Number(this.bin >> 22n) + Snowflake.EPOCH);
-		return d;
+		return new Date(Number(this.bin >> 22n) + Snowflake.EPOCH);
 	}
 
 	public set createdAt(d: Date) {

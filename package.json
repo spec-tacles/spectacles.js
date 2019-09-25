@@ -4,16 +4,14 @@
   "description": "Spectacles utility methods",
   "main": "dist/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest src",
     "prepare": "rimraf dist typings && tsc"
   },
   "keywords": [
     "spectacles",
     "discord",
     "permissions",
-    "encode",
-    "decode",
-    "erlpack"
+    "snowflake"
   ],
   "types": "typings/index.d.ts",
   "repository": {
@@ -28,8 +26,14 @@
   "homepage": "https://github.com/spec-tacles/util#readme",
   "dependencies": {},
   "devDependencies": {
+    "@babel/plugin-syntax-bigint": "^7.4.4",
+    "@babel/preset-env": "^7.6.2",
+    "@babel/preset-typescript": "^7.6.0",
+    "@devsnek/fuzzy": "github:devsnek/fuzzy",
     "@spectacles/types": "^0.1.4",
+    "@types/jest": "^24.0.18",
     "@types/node": "^10.12.18",
+    "jest": "^24.9.0",
     "rimraf": "^2.6.3",
     "typescript": "^3.5.2"
   }
