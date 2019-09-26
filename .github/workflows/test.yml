@@ -1,0 +1,21 @@
+name: Test
+
+on: [push, pull_request]
+
+jobs:
+  test:
+
+    name: Jest
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node_version: [10, 11, 12]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Use Node.JS ${{ matrix.node_version }}
+      uses: actions/setup-node@v1
+      with:
+        version: ${{ matrix.node_version }}
+    - run: npm install
+    - run: npm test
