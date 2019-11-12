@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "jest src",
-    "prepare": "rimraf dist typings && tsc"
+    "prepare": "rimraf dist typings && tsc",
+    "docs": "typedoc --out docs/ --exclude **/*.test.ts --readme none src/"
   },
   "keywords": [
     "spectacles",
@@ -36,6 +37,7 @@
     "@types/node": "^10.14.19",
     "jest": "^24.9.0",
     "rimraf": "^2.7.1",
+    "typedoc": "^0.15.0",
     "typescript": "^3.6.3"
   }
 }
