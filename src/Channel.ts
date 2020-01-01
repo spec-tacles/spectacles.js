@@ -6,6 +6,8 @@ export enum ChannelType {
   GUILD_VOICE,
   GROUP_DM,
   GUILD_CATEGORY,
+  GUILD_NEWS,
+  GUILD_STORE,
 }
 
 export interface PermissionOverwrite {
