@@ -11,20 +11,11 @@ jobs:
       with:
         node-version: 12
     - run: npm install
-    - name: Generate docs
+    - name: Build docs
       run: npm run docs
-    - name: Checkout docs branch
-      uses: actions/checkout@v1
+    - name: Deploy docs
+      uses: JamesIves/github-pages-deploy-action@releases/v3
       with:
-        clean: false
-        ref: refs/heads/gh-pages
-    - name: Move and commit docs
-      run: |
-        DOCS_DIRECTORY=$(echo ${{ github.ref }} | cut -d / -f 3- | sed -r 's/[\/\\]+/_/g')
-        rm -rf $DOCS_DIRECTORY
-        mv -f docs $DOCS_DIRECTORY
-        git config user.name "${GITHUB_ACTOR}"
-        git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        git add $DOCS_DIRECTORY
-        git commit -m "Docs build for ${{ github.sha }}"
-        git push "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" HEAD:gh-pages
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BRANCH: gh-pages
+        FOLDER: docs
