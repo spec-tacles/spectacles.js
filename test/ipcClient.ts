@@ -3,5 +3,6 @@ import { resolve } from 'path';
 
 const client = new Ipc();
 client.fork(resolve(process.cwd(), 'dist', 'test', 'ipcServer'));
-client.subscribe('foo', (event, m) => console.log(event, m));
+client.on('foo', (e) => console.log('foo', e));
+client.subscribe('foo');
 client.publish('hello', 'world');

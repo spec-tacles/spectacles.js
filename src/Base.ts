@@ -5,13 +5,27 @@ export interface SendOptions {
   expiration?: number;
 }
 
+export interface ResponseOptions {
+  reply: (data: any) => void;
+}
+
+export type EventHandler<T> = (data: T, options: ResponseOptions) => void;
+
 /**
  * A message broker. Used to transmit data to and from the Discord Gateway.
  * @abstract
  */
-export default abstract class Broker<Send, Receive> extends EventEmitter {
-  public handlers: { [name: string]: (data: Receive) => Promise<Send | void> | Send | void } = {};
-  private _responses: { [key: string]: (data: Receive) => void } = {};
+export default abstract class Broker<Send, Receive, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
+  public static DEFAULT_EXPIRATION = 5e3;
+
+  protected readonly _subscribedEvents = new Set<string>();
+  private readonly _responses: EventEmitter;
+
+  constructor() {
+    super();
+    this._responses = new EventEmitter();
+    this._responses.setMaxListeners(0);
+  }
 
   /**
    * Publish an event to this broker. Will be emitted on subscribed brokers.
@@ -34,9 +48,9 @@ export default abstract class Broker<Send, Receive> extends EventEmitter {
    * @param {...*} args Any other args the subscription might require
    * @returns {*}
    */
-  public subscribe(events: string | string[], handler: (event: string, data: Receive) => Promise<Send> | Send | void): any {
+  public subscribe(events: string | string[]): any {
     if (!Array.isArray(events)) events = [events];
-    for (const e of events) this.handlers[e] = handler.bind(this, e);
+    for (const event of events) this._subscribedEvents.add(event);
     return this._subscribe(events);
   }
 
@@ -48,49 +62,38 @@ export default abstract class Broker<Send, Receive> extends EventEmitter {
    */
   public unsubscribe(events: string | string[]): any {
     if (!Array.isArray(events)) events = [events];
-    for (const e of events) delete this.handlers[e];
+    for (const event of events) this._subscribedEvents.delete(event);
     return this._unsubscribe(events);
   }
 
   protected abstract _subscribe(events: string[]): any;
   protected abstract _unsubscribe(events: string[]): any;
 
-  protected async _handleMessage(event: string, message: Buffer | Receive): Promise<Buffer | undefined> {
+  protected _handleMessage(event: string, message: Buffer | Receive, options: ROpts): void {
     if (Buffer.isBuffer(message)) message = decode<Receive>(message);
-    if (this.handlers[event]) {
-      try {
-        let res = this.handlers[event](message);
-        if (res instanceof Promise) res = await res;
-        if (res) return encode(res);
-      } catch (e) {
-        this.emit('error', e);
-      }
-    } else if (this._responses[event]) {
-      const res = this._responses[event];
-      delete this._responses[event];
-      res(message);
-    } else {
-      throw new Error(`no listener registered for event "${event}"`);
-    }
+    this.emit(event, message, options);
   }
 
-  protected _awaitResponse(id: string, expiration?: number) {
+  protected _handleReply(event: string, message: Buffer | Receive): void {
+    if (Buffer.isBuffer(message)) message = decode<Receive>(message);
+    this._responses.emit(event, message);
+  }
+
+  protected _awaitResponse(id: string, expiration: number = Broker.DEFAULT_EXPIRATION) {
     return new Promise<Receive>((resolve, reject) => {
       let timeout: NodeJS.Timer;
-
-      if (expiration && expiration >= 0) {
-        timeout = setTimeout(() => {
-          delete this._responses[id];
-          reject(new Error('callback exceeded time limit'));
-        }, expiration);
-      }
 
       const listener = (response: Receive) => {
         clearTimeout(timeout);
         resolve(response);
       };
 
-      this._responses[id] = listener;
+      timeout = setTimeout(() => {
+        this._responses.removeListener(id, listener);
+        reject(new Error('callback exceeded time limit'));
+      }, expiration);
+
+      this._responses.once(id, listener);
     });
   }
 }

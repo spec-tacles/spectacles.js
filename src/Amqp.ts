@@ -2,7 +2,7 @@ import { encode } from '@spectacles/util';
 import * as amqp from 'amqplib';
 import { ulid } from 'ulid';
 const { isFatalError } = require('amqplib/lib/connection');
-import Broker from './Base';
+import Broker, { ResponseOptions } from './Base';
 
 export interface AmqpOptions {
   reconnectTimeout?: number;
@@ -10,11 +10,17 @@ export interface AmqpOptions {
   assert?: amqp.Options.AssertQueue,
 }
 
+export interface AmqpResponseOptions extends ResponseOptions {
+  ack: () => void;
+  nack: (allUpTo?: boolean, requeue?: boolean) => void;
+  reject: (requeue?: boolean) => void;
+}
+
 /**
  * A broker for AMQP clients. Probably most useful for RabbitMQ.
  * @extends Broker
  */
-export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Receieve> {
+export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Receieve, AmqpResponseOptions> {
   /**
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
@@ -31,14 +37,14 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * The AMQP exchange of this broker.
    * @type {string}
    */
-  public group: string = '';
+  public group: string;
 
   /**
    * The subgroup of this broker. Useful to setup multiple groups of queues that all receive the same data.
    * Implemented internally as an extra identifier in the queue name.
    * @type {string}
    */
-  public subgroup: string = '';
+  public subgroup?: string;
 
   public options: AmqpOptions;
 
@@ -59,8 +65,8 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * method to wait for a response before resolving)
    * @param {number} [options.reconnectTimeout=1e4] How often to attempt to reconnect when the connection fails.
    */
-  constructor(group: string, options?: AmqpOptions);
-  constructor(group: string, subgroup: string, options?: AmqpOptions);
+  constructor(group?: string, options?: AmqpOptions);
+  constructor(group?: string, subgroup?: string, options?: AmqpOptions);
   constructor(group: string = 'default', subgroup?: AmqpOptions | string, options: AmqpOptions = {}) {
     super();
     this.group = group;
@@ -107,7 +113,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
     // setup RPC callback queue
     this.callback = (await this.channel.assertQueue('', { exclusive: true })).queue;
     this.channel.consume(this.callback, (msg) => {
-      if (msg) this._handleMessage(msg.properties.correlationId, msg.content);
+      if (msg) this._handleReply(msg.properties.correlationId, msg.content);
     }, { noAck: true });
 
     await this.channel.assertExchange(this.group, 'direct');
@@ -135,8 +141,12 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
         if (msg) {
           try {
             this._channel.ack(msg);
-            const res = await this._handleMessage(event, msg.content);
-            if (res) this._channel.sendToQueue(msg.properties.replyTo, res, { correlationId: msg.properties.correlationId });
+            this._handleMessage(event, msg.content, {
+              reply: (data) => this._channel.sendToQueue(msg.properties.replyTo, encode(data), { correlationId: msg.properties.correlationId }),
+              ack: () => this._channel.ack(msg),
+              nack: (allUpTo, requeue) => this._channel.nack(msg, allUpTo, requeue),
+              reject: (requeue) => this._channel.reject(msg, requeue),
+            });
           } catch (e) {
             this._channel.reject(msg, false);
             this.emit('error', e);

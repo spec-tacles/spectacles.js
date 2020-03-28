@@ -12,9 +12,10 @@ export default class Ipc<Send = any, Receive = any> extends Broker<Send, Receive
   public children: ChildProcess[] = [];
   private _nextChildIndex = 0;
   private _messageHandler = (message: IpcMessage) => {
-    this._handleMessage(message.event, message.data).then(res => {
-      if (res) return this._send({ event: message.event, data: res, key: message.key });
-    }, err => this.emit('error', err));
+    if (message.key) this._handleReply(message.key, message.data);
+    else this._handleMessage(message.event, message.data, {
+      reply: data => this._send({ event: message.event, data, key: message.key }),
+    });
   };
 
   constructor() {

@@ -2,10 +2,9 @@ import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
 import { zipObject, partition, isObject } from 'lodash';
 import { resolve } from 'path';
-import { encode, decode } from '@spectacles/util';
+import { encode } from '@spectacles/util';
 import Redis = require('ioredis');
-import Broker from './Base';
-import { EventEmitter } from 'events';
+import Broker, { ResponseOptions } from './Base';
 
 declare module 'ioredis' {
   interface Redis {
@@ -26,6 +25,10 @@ export interface ClientOptions {
   name?: string;
 }
 
+export interface RedisResponseOptions extends ResponseOptions {
+  ack: () => void;
+}
+
 Redis.Command.setArgumentTransformer('xadd', (args) => {
   if (args.length === 3) {
     const toAdd = args.pop();
@@ -43,7 +46,7 @@ Redis.Command.setArgumentTransformer('xadd', (args) => {
   return args;
 });
 
-export default class RedisBroker<Send = any, Receive = any> extends Broker<Send, Receive> {
+export default class RedisBroker<Send = any, Receive = any> extends Broker<Send, Receive, RedisResponseOptions> {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
@@ -67,7 +70,7 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
     this._rpcReadClient = redis.duplicate();
     this._rpcReadClient.on('messageBuffer', (channel: Buffer, message: Buffer) => {
       const [, id] = channel.toString().split(':');
-      if (id) this._handleMessage(id, message);
+      if (id) this._handleReply(id, message);
     });
 
     this._streamReadClient = redis.duplicate();
@@ -118,7 +121,7 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
 
     let events: Array<string>;
     while (true) {
-      events = Object.keys(this.handlers);
+      events = [...this._subscribedEvents];
 
       try {
         let data: ReadGroupResponse | null = await this._streamReadClient.xreadgroup(
@@ -143,13 +146,10 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
             let i = 0;
             const obj = zipObject(...partition(packet, () => i++ % 2 === 0)) as unknown as Receive;
 
-            this.redis.xack(event, this.group, id);
-            try {
-              const res = await this._handleMessage(event, obj);
-              await this.redis.publish(`${event}:${id}`, encode(res) as any);
-            } catch (e) {
-              this.emit('error', e);
-            }
+            this._handleMessage(event, obj, {
+              reply: (data) => this.redis.publish(`${event}:${id}`, encode(data) as any),
+              ack: () => this.redis.xack(event, this.group, id),
+            });
           }
         }
       } catch (e) {

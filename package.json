@@ -4,9 +4,7 @@
   "description": "Brokers for easy RPC.",
   "main": "dist/src/index.js",
   "scripts": {
-    "start:amqp": "npm run prepare && node --trace-warnings dist/test/amqp.js",
-    "start:redis": "npm run prepare && node --trace-warnings dist/test/redis.js",
-    "start:ipc": "npm run prepare && node --trace-warnings dist/test/ipcClient.js",
+    "test": "jest",
     "prepare": "rimraf typings dist && tsc",
     "docs": "jsdoc -R README.md -c jsdoc.json"
   },
@@ -23,21 +21,27 @@
   "homepage": "https://github.com/spec-tacles/brokers#readme",
   "dependencies": {
     "@spectacles/util": "^0.3.2",
-    "amqplib": "^0.5.2",
-    "ioredis": "^4.2.0",
-    "lodash": "^4.17.11",
+    "amqplib": "^0.5.5",
+    "ioredis": "^4.14.1",
+    "lodash": "^4.17.15",
     "ulid": "^2.3.0"
   },
   "devDependencies": {
-    "@spectacles/types": "^0.2.0",
-    "@types/amqplib": "^0.5.6",
-    "@types/ioredis": "^4.0.4",
-    "@types/lodash": "^4.14.118",
-    "@types/node": "^11.9.6",
-    "@types/ws": "^4.0.0",
+    "@babel/core": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.9.0",
+    "@spectacles/types": "^0.2.1",
+    "@types/amqplib": "^0.5.13",
+    "@types/ioredis": "^4.14.4",
+    "@types/jest": "^25.1.4",
+    "@types/lodash": "^4.14.149",
+    "@types/node": "^11.15.4",
+    "@types/ws": "^4.0.2",
+    "babel-jest": "^25.2.3",
     "docdash": "^0.4.0",
-    "jsdoc": "^3.5.5",
-    "rimraf": "^2.6.3",
-    "typescript": "^3.3.3333"
+    "jest": "^25.2.3",
+    "jsdoc": "^3.6.3",
+    "rimraf": "^2.7.1",
+    "typescript": "^3.7.5"
   }
 }
