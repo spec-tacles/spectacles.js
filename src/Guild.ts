@@ -107,6 +107,8 @@ export interface AvailableGuild {
   premium_tier: PremiumTier;
   premium_subscription_count?: number;
   preferred_locale?: string;
+  approximate_member_count?: number;
+  approximate_presence_count?: number;
 }
 
 export interface WebsocketGuild extends AvailableGuild {
