@@ -120,6 +120,13 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
     return connection;
   }
 
+  public async createQueue(event: string): Promise<string> {
+    const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
+    await this._channel.assertQueue(queue, this.options.assert);
+    await this._channel.bindQueue(queue, this.group, event);
+    return queue;
+  }
+
   /**
    * Subscribe this broker to some AMQP queues.
    * @param {string|Iterable<string>} events The events to subscribe to
@@ -130,10 +137,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    */
   protected _subscribe(events: string[]): Promise<amqp.Replies.Consume[]> {
     return Promise.all(events.map(async event => {
-      // setup queue
-      const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
-      await this._channel.assertQueue(queue, this.options.assert);
-      await this._channel.bindQueue(queue, this.group, event);
+      const queue = await this.createQueue(event);
 
       // register consumer
       const consumer = await this._channel.consume(queue, async msg => {
