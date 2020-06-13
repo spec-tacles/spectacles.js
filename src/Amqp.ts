@@ -121,7 +121,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
   }
 
   public async createQueue(event: string): Promise<string> {
-    const queue = `${this.group}:${(this.subgroup && `${this.subgroup}:`) + event}`;
+    const queue = `${this.group}:${(this.subgroup ? `${this.subgroup}:` : '') + event}`;
     await this._channel.assertQueue(queue, this.options.assert);
     await this._channel.bindQueue(queue, this.group, event);
     return queue;
@@ -144,7 +144,6 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
         // emit consumed messages with an acknowledger function
         if (msg) {
           try {
-            this._channel.ack(msg);
             this._handleMessage(event, msg.content, {
               reply: (data) => this._channel.sendToQueue(msg.properties.replyTo, encode(data), { correlationId: msg.properties.correlationId }),
               ack: () => this._channel.ack(msg),
