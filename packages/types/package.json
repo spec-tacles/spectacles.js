@@ -1,0 +1,17 @@
+{
+  "name": "@spectacles/types",
+  "version": "0.2.1",
+  "description": "Typings for Discord objects.",
+  "main": "dist/src/index.js",
+  "types": "typings/src/index.d.ts",
+  "scripts": {
+    "prepare": "rimraf dist typings && tsc"
+  },
+  "repository": "https://github.com/spec-tacles/types.git",
+  "author": "Will Nelson <nelson.will@live.com>",
+  "license": "ISC",
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^3.9.7"
+  }
+}

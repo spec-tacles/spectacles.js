@@ -1,0 +1,12 @@
+{
+  "name": "@spectacles/spectacles.js",
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": "https://github.com/spec-tacles/spectacles.js",
+  "author": "Will Nelson <will@wnelson.xyz>",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/**"
+  ]
+}

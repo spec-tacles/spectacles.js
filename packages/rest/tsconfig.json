@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.packages.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "declarationDir": "typings"
+  },
+  "include": [
+    "./src/",
+    "./test/"
+  ],
+  "exclude": [
+    "**/*.test.ts",
+    "**/__mocks__/**"
+  ]
+}

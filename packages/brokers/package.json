@@ -1,0 +1,46 @@
+{
+  "name": "@spectacles/brokers",
+  "version": "0.8.0",
+  "description": "Brokers for easy RPC.",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "test": "jest",
+    "prepare": "rimraf typings dist && tsc",
+    "docs": "jsdoc -R README.md -c jsdoc.json"
+  },
+  "types": "typings/src/index.d.ts",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spec-tacles/brokers.git"
+  },
+  "author": "Will Nelson <will@pleb.xyz>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spec-tacles/brokers/issues"
+  },
+  "homepage": "https://github.com/spec-tacles/brokers#readme",
+  "dependencies": {
+    "@spectacles/util": "workspace:^0.4.0",
+    "amqplib": "^0.5.5",
+    "ioredis": "^4.14.1",
+    "lodash": "^4.17.15",
+    "ulid": "^2.3.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-0",
+    "@babel/preset-env": "^7.9.0",
+    "@babel/preset-typescript": "^7.9.0",
+    "@types/amqplib": "^0.5.13",
+    "@types/ioredis": "^4.14.4",
+    "@types/jest": "^25.1.4",
+    "@types/lodash": "^4.14.149",
+    "@types/node": "^11.15.4",
+    "@types/ws": "^4.0.2",
+    "babel-jest": "^25.2.3",
+    "docdash": "^0.4.0",
+    "jest": "^25.2.3",
+    "jsdoc": "^3.6.3",
+    "rimraf": "^2.7.1",
+    "typescript": "^3.9.7"
+  }
+}

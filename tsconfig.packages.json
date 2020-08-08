@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2017",
+
+    "strict": true,
+    "removeComments": false,
+    "skipLibCheck": true
+  },
+  "files": [],
+  "references": [
+    { "path": "packages/util" },
+    { "path": "packages/brokers" }
+  ]
+}
