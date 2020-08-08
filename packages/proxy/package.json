@@ -1,0 +1,28 @@
+{
+  "name": "@spectacles/proxy",
+  "version": "0.1.0",
+  "description": "A JavaScript wrapper for the Spectacles proxy.",
+  "main": "dist/src/index.js",
+  "types": "typings/src/index.d.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "rimraf dist typings && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spec-tacles/spectacles.js.git"
+  },
+  "author": "Will Nelson <will@wnelson.xyz>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spec-tacles/spectacles.js/issues"
+  },
+  "homepage": "https://github.com/spec-tacles/spectacles.js#readme",
+  "dependencies": {
+    "@spectacles/brokers": "workspace:^0.8.0"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2",
+    "typescript": "^3.9.7"
+  }
+}

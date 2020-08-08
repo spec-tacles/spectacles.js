@@ -45,6 +45,16 @@ importers:
       rimraf: ^2.7.1
       typescript: ^3.9.7
       ulid: ^2.3.0
+  packages/proxy:
+    dependencies:
+      '@spectacles/brokers': 'link:../brokers'
+    devDependencies:
+      rimraf: 3.0.2
+      typescript: 3.9.7
+    specifiers:
+      '@spectacles/brokers': 'workspace:^0.8.0'
+      rimraf: ^3.0.2
+      typescript: ^3.9.7
   packages/rest:
     dependencies:
       form-data: 2.5.1

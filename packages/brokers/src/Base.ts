@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { decode, encode } from '@spectacles/util';
+import { decode } from '@spectacles/util';
 
 export interface SendOptions {
   expiration?: number;
