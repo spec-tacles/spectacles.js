@@ -1,0 +1,6 @@
+/*
+
+!typings/**
+!dist/**
+!package.json
+!yarn.lock
