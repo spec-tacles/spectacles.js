@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2017",
+    "declaration": true,
+    "declarationDir": "typings",
+    "outDir": "dist",
+    "sourceMap": true,
+    "removeComments": false
+  },
+  "include": [
+    "./src/",
+    "./test/"
+  ]
+}
