@@ -1,5 +1,13 @@
 import { EventEmitter } from 'events';
-import { decode } from '@spectacles/util';
+import { encode, decode } from '@spectacles/util';
+
+export type Serialize<Send> = (data: Send) => Buffer;
+export type Deserialize<Receive> = (data: Buffer) => Receive;
+
+export interface Options<Send = any, Receive = unknown> {
+  serialize?: Serialize<Send>;
+  deserialize?: Deserialize<Receive>;
+}
 
 export interface SendOptions {
   expiration?: number;
@@ -18,11 +26,16 @@ export type EventHandler<T> = (data: T, options: ResponseOptions) => void;
 export default abstract class Broker<Send, Receive, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
   public static DEFAULT_EXPIRATION = 5e3;
 
+  public readonly serialize: Serialize<Send>;
+  public readonly deserialize: Deserialize<Receive>;
+
   protected readonly _subscribedEvents = new Set<string>();
   private readonly _responses: EventEmitter;
 
-  constructor() {
+  constructor(options: Options<Send, Receive> = {}) {
     super();
+    this.serialize = options.serialize ?? encode;
+    this.deserialize = options.deserialize ?? decode;
     this._responses = new EventEmitter();
     this._responses.setMaxListeners(0);
   }
@@ -70,12 +83,12 @@ export default abstract class Broker<Send, Receive, ROpts extends ResponseOption
   protected abstract _unsubscribe(events: string[]): any;
 
   protected _handleMessage(event: string, message: Buffer | Receive, options: ROpts): void {
-    if (Buffer.isBuffer(message)) message = decode<Receive>(message);
+    if (Buffer.isBuffer(message)) message = this.deserialize(message);
     this.emit(event, message, options);
   }
 
   protected _handleReply(event: string, message: Buffer | Receive): void {
-    if (Buffer.isBuffer(message)) message = decode<Receive>(message);
+    if (Buffer.isBuffer(message)) message = this.deserialize(message);
     this._responses.emit(event, message);
   }
 

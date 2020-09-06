@@ -1,10 +1,9 @@
-import { encode } from '@spectacles/util';
 import * as amqp from 'amqplib';
 import { ulid } from 'ulid';
 const { isFatalError } = require('amqplib/lib/connection');
-import Broker, { ResponseOptions } from './Base';
+import Broker, { ResponseOptions, Options } from './Base';
 
-export interface AmqpOptions {
+export interface AmqpOptions<Send = any, Receive = unknown> extends Options<Send, Receive> {
   reconnectTimeout?: number;
   consume?: amqp.Options.Consume,
   assert?: amqp.Options.AssertQueue,
@@ -46,7 +45,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    */
   public subgroup?: string;
 
-  public options: AmqpOptions;
+  public options: AmqpOptions<Send, Receieve>;
 
   /**
    * The consumers that this broker has registered.
@@ -65,10 +64,10 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * method to wait for a response before resolving)
    * @param {number} [options.reconnectTimeout=1e4] How often to attempt to reconnect when the connection fails.
    */
-  constructor(group?: string, options?: AmqpOptions);
-  constructor(group?: string, subgroup?: string, options?: AmqpOptions);
-  constructor(group: string = 'default', subgroup?: AmqpOptions | string, options: AmqpOptions = {}) {
-    super();
+  constructor(group?: string, options?: AmqpOptions<Send, Receieve>);
+  constructor(group?: string, subgroup?: string, options?: AmqpOptions<Send, Receieve>);
+  constructor(group: string = 'default', subgroup?: AmqpOptions<Send, Receieve> | string, options: AmqpOptions<Send, Receieve> = {}) {
+    super(options);
     this.group = group;
 
     if (typeof subgroup === 'object') options = subgroup;
@@ -145,7 +144,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
         if (msg) {
           try {
             this._handleMessage(event, msg.content, {
-              reply: (data) => this._channel.sendToQueue(msg.properties.replyTo, encode(data), { correlationId: msg.properties.correlationId }),
+              reply: (data) => this._channel.sendToQueue(msg.properties.replyTo, this.serialize(data), { correlationId: msg.properties.correlationId }),
               ack: () => this._channel.ack(msg),
               nack: (allUpTo, requeue) => this._channel.nack(msg, allUpTo, requeue),
               reject: (requeue) => this._channel.reject(msg, requeue),
@@ -186,7 +185,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
   public publish(event: string, data: Send, options: amqp.Options.Publish = {}): void {
-    this._channel.publish(this.group, event, encode(data), options);
+    this._channel.publish(this.group, event, this.serialize(data), options);
   }
 
   public call(method: string, data: Send, options: amqp.Options.Publish = {}): Promise<Receieve> {
