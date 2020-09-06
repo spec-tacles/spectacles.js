@@ -1,0 +1,7 @@
+/dist
+/node_modules
+/test
+/typings
+/babel.config.js
+/jsdoc.json
+/tsconfig.json
