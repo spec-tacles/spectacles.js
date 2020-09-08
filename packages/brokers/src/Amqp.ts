@@ -24,7 +24,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
    */
-  public channel?: amqp.Channel = undefined;
+  public channel?: amqp.Channel;
 
   /**
    * The callback queue.
@@ -52,7 +52,7 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    * @type {Object<string, string>}
    * @private
    */
-  private _consumers: { [event: string]: string } = {};
+  private _consumers: { [event: string]: string };
 
   /**
    * @constructor
@@ -66,14 +66,18 @@ export default class Amqp<Send = any, Receieve = any> extends Broker<Send, Recei
    */
   constructor(group?: string, options?: AmqpOptions<Send, Receieve>);
   constructor(group?: string, subgroup?: string, options?: AmqpOptions<Send, Receieve>);
-  constructor(group: string = 'default', subgroup?: AmqpOptions<Send, Receieve> | string, options: AmqpOptions<Send, Receieve> = {}) {
-    super(options);
+  constructor(group: string = 'default', subgroup?: AmqpOptions<Send, Receieve> | string, options?: AmqpOptions<Send, Receieve>) {
+    if (typeof subgroup === 'object') {
+      super(subgroup);
+      this.options = subgroup;
+    } else {
+      super(options);
+      this.subgroup = subgroup;
+      this.options = options ?? {};
+    }
+
     this.group = group;
-
-    if (typeof subgroup === 'object') options = subgroup;
-    else if (typeof subgroup === 'string') this.subgroup = subgroup;
-
-    this.options = options;
+    this._consumers = {};
   }
 
   /**
