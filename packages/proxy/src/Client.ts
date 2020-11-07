@@ -1,3 +1,4 @@
+import { encode, decode } from '@msgpack/msgpack';
 import Broker, { ResponseOptions } from '@spectacles/brokers';
 
 export interface RequestOptions {
@@ -5,8 +6,25 @@ export interface RequestOptions {
   query?: Record<string, string>,
 }
 
+interface Request {
+  method: string;
+  path: string;
+  query?: Record<string, string>;
+  body: Buffer;
+  headers?: Record<string, string>;
+}
+
 export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
-  constructor(protected broker: Broker<string, unknown, ROpts>, public readonly token: string) {
+  constructor(protected broker: Broker<Request, unknown, ROpts>, public readonly token: string) {
+    broker.serialize = function(req: Request) {
+      let encoded = encode(req);
+      return Buffer.from(encoded, encoded.byteOffset, encoded.byteLength);
+    };
+
+    broker.deserialize = function(data: Buffer) {
+      return decode(data);
+    };
+
     Object.defineProperty(this, 'token', { enumerable: false });
   }
 
@@ -37,14 +55,17 @@ export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
       ...options.headers,
     };
 
-    if (body != null) headers['content-type'] = 'application/json';
+    if (body != null && !Buffer.isBuffer(body)) {
+      headers['content-type'] = 'application/json';
+      body = JSON.stringify(body);
+    }
 
-    return this.broker.call('REQUEST', JSON.stringify({
+    return this.broker.call('REQUEST', {
       method,
       path,
       body,
       query: options.query,
       headers,
-    }));
+    });
   }
 }

@@ -26,8 +26,8 @@ export type EventHandler<T> = (data: T, options: ResponseOptions) => void;
 export default abstract class Broker<Send, Receive, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
   public static DEFAULT_EXPIRATION = 5e3;
 
-  public readonly serialize: Serialize<Send>;
-  public readonly deserialize: Deserialize<Receive>;
+  public serialize: Serialize<Send>;
+  public deserialize: Deserialize<Receive>;
 
   protected readonly _subscribedEvents = new Set<string>();
   private readonly _responses: EventEmitter;
