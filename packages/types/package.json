@@ -1,6 +1,6 @@
 {
   "name": "@spectacles/types",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Typings for Discord objects.",
   "main": "dist/src/index.js",
   "types": "typings/src/index.d.ts",
