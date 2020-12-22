@@ -1,5 +1,4 @@
 import GuildMember from './GuildMember';
-import { OptionType } from './ApplicationCommand';
 
 export default interface Interaction {
 	id: string;
@@ -25,6 +24,6 @@ export interface InteractionData {
 
 export interface InteractionDataOption {
 	name: string;
-	value?: OptionType;
+	value?: unknown;
 	options?: InteractionDataOption[];
 }
