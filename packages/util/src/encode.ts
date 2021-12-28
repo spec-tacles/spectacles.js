@@ -1,13 +1,13 @@
+import { encode as mEncode, decode as mDecode } from '@msgpack/msgpack';
+
 export function encode(data: any): Buffer {
   if (Buffer.isBuffer(data)) return data;
-  return Buffer.from(JSON.stringify(data));
+  return Buffer.from(mEncode(data));
 }
 
-export function decode<T = any>(data: ArrayBuffer | string | Buffer[] | Buffer | Uint8Array): T {
-  if (data instanceof ArrayBuffer) data = Buffer.from(data);
+export function decode(data: ArrayBuffer | string | Buffer[] | Buffer | Uint8Array): unknown {
+  if (typeof data === 'string') data = Buffer.from(data);
   else if (Array.isArray(data)) data = Buffer.concat(data);
 
-  if (Buffer.isBuffer(data)) data = data.toString();
-  else if (typeof data !== 'string') data = Buffer.from(data).toString();
-  return JSON.parse(data);
+  return mDecode(data);
 }

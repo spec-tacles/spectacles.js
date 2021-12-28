@@ -122,6 +122,7 @@ importers:
       '@babel/preset-env': ^7.10.3
       '@babel/preset-typescript': ^7.10.1
       '@devsnek/fuzzy': github:devsnek/fuzzy
+      '@msgpack/msgpack': ^2.3.0
       '@spectacles/types': ^0.1.4
       '@types/jest': ^24.9.1
       '@types/node': ^10.17.26
@@ -129,6 +130,8 @@ importers:
       rimraf: ^2.7.1
       typedoc: ^0.15.8
       typescript: ^3.9.7
+    dependencies:
+      '@msgpack/msgpack': 2.3.0
     devDependencies:
       '@babel/core': 7.11.1
       '@babel/plugin-proposal-class-properties': 7.10.4_@babel+core@7.11.1
@@ -2436,6 +2439,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -2639,6 +2643,8 @@ packages:
       v8-to-istanbul: 4.1.4
     optionalDependencies:
       node-notifier: 7.0.2
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /@jest/reporters/27.4.5:
@@ -2693,7 +2699,7 @@ packages:
     engines: {node: '>= 10.14.2'}
     dependencies:
       callsites: 3.1.0
-      graceful-fs: 4.2.4
+      graceful-fs: 4.2.8
       source-map: 0.6.1
     dev: true
 
@@ -2757,13 +2763,14 @@ packages:
     engines: {node: '>= 10.14.2'}
     dependencies:
       '@jest/test-result': 26.2.0
-      graceful-fs: 4.2.4
+      graceful-fs: 4.2.8
       jest-haste-map: 26.2.2
       jest-runner: 26.2.2
       jest-runtime: 26.2.2
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -2822,6 +2829,8 @@ packages:
       slash: 3.0.0
       source-map: 0.6.1
       write-file-atomic: 3.0.3
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /@jest/transform/27.4.5:
@@ -3455,8 +3464,10 @@ packages:
       babel-plugin-istanbul: 6.0.0
       babel-preset-jest: 26.2.0_@babel+core@7.11.1
       chalk: 4.1.0
-      graceful-fs: 4.2.4
+      graceful-fs: 4.2.8
       slash: 3.0.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /babel-jest/27.4.5_@babel+core@7.16.5:
@@ -3493,6 +3504,8 @@ packages:
       '@istanbuljs/schema': 0.1.2
       istanbul-lib-instrument: 4.0.3
       test-exclude: 6.0.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /babel-plugin-istanbul/6.1.1:
@@ -4625,15 +4638,6 @@ packages:
     resolution: {integrity: sha1-FQStJSMVjKpA20onh8sBQRmU6k8=}
     dev: true
 
-  /fsevents/2.1.3:
-    resolution: {integrity: sha512-Auw9a4AxqWpa9GUfj370BMPzzyncfBABW8Mab7BGWBYDj4Isgq+cDKtx0i6u9jcX9pQDnswsaaOTgTmA5pEjuQ==}
-    engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
-    os: [darwin]
-    deprecated: '"Please update to latest v2.3 or v2.2"'
-    requiresBuild: true
-    dev: true
-    optional: true
-
   /fsevents/2.3.2:
     resolution: {integrity: sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
@@ -5350,6 +5354,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -5438,6 +5443,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -5718,7 +5724,7 @@ packages:
       sane: 4.1.0
       walker: 1.0.7
     optionalDependencies:
-      fsevents: 2.1.3
+      fsevents: 2.3.2
     dev: true
 
   /jest-haste-map/27.4.5:
@@ -5794,6 +5800,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -6125,6 +6132,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -6233,6 +6241,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -6282,7 +6291,7 @@ packages:
     engines: {node: '>= 10.14.2'}
     dependencies:
       '@types/node': 10.17.28
-      graceful-fs: 4.2.4
+      graceful-fs: 4.2.8
     dev: true
 
   /jest-serializer/27.4.0:
@@ -6528,6 +6537,7 @@ packages:
     transitivePeerDependencies:
       - bufferutil
       - canvas
+      - supports-color
       - utf-8-validate
     dev: true
 
@@ -6767,7 +6777,7 @@ packages:
   /jsonfile/4.0.0:
     resolution: {integrity: sha1-h3Gq4HmbZAdrdmQPygWPnBDjPss=}
     optionalDependencies:
-      graceful-fs: 4.2.4
+      graceful-fs: 4.2.8
     dev: true
 
   /jsprim/1.4.2:

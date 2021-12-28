@@ -39,5 +39,8 @@
     "rimraf": "^2.7.1",
     "typedoc": "^0.15.8",
     "typescript": "^3.9.7"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^2.3.0"
   }
 }
