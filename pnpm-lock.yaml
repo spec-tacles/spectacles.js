@@ -50,12 +50,10 @@ importers:
 
   packages/proxy:
     specifiers:
-      '@msgpack/msgpack': ^2.3.0
       '@spectacles/brokers': workspace:^0.8.0
       rimraf: ^3.0.2
       typescript: ^3.9.7
     dependencies:
-      '@msgpack/msgpack': 2.3.0
       '@spectacles/brokers': link:../brokers
     devDependencies:
       rimraf: 3.0.2

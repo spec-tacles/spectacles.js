@@ -1,4 +1,3 @@
-import { encode, decode } from '@msgpack/msgpack';
 import Broker, { ResponseOptions } from '@spectacles/brokers';
 
 export interface RequestOptions {
@@ -16,15 +15,6 @@ interface Request {
 
 export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
   constructor(protected broker: Broker<Request, ROpts>, public readonly token: string) {
-    broker.serialize = function(req: Request) {
-      let encoded = encode(req);
-      return Buffer.from(encoded, encoded.byteOffset, encoded.byteLength);
-    };
-
-    broker.deserialize = function(data: Buffer) {
-      return decode(data);
-    };
-
     Object.defineProperty(this, 'token', { enumerable: false });
   }
 
