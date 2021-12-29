@@ -8,7 +8,7 @@ export interface IpcMessage {
   key?: string;
 }
 
-export default class Ipc<T = any> extends Broker<T> {
+export default class Ipc extends Broker {
   public children: ChildProcess[] = [];
   private _nextChildIndex = 0;
   private _messageHandler = (message: IpcMessage) => {
@@ -35,7 +35,7 @@ export default class Ipc<T = any> extends Broker<T> {
     return this._send({ event, data });
   }
 
-  public call(method: string, data: T): Promise<unknown> {
+  public call(method: string, data: any): Promise<unknown> {
     const key = ulid();
     this._send({ event: method, data, key });
     return this._awaitResponse(key);

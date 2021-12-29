@@ -3,7 +3,7 @@ import { ulid } from 'ulid';
 const { isFatalError } = require('amqplib/lib/connection');
 import Broker, { ResponseOptions, Options } from './Base';
 
-export interface AmqpOptions<T = any> extends Options<T> {
+export interface AmqpOptions extends Options {
   reconnectTimeout?: number;
   consume?: amqp.Options.Consume,
   assert?: amqp.Options.AssertQueue,
@@ -19,7 +19,7 @@ export interface AmqpResponseOptions extends ResponseOptions {
  * A broker for AMQP clients. Probably most useful for RabbitMQ.
  * @extends Broker
  */
-export default class Amqp<T = any> extends Broker<T, AmqpResponseOptions> {
+export default class Amqp extends Broker<AmqpResponseOptions> {
   /**
    * The AMQP channel currently connected to.
    * @type {?amqp.Channel}
@@ -45,7 +45,7 @@ export default class Amqp<T = any> extends Broker<T, AmqpResponseOptions> {
    */
   public subgroup?: string;
 
-  public options: AmqpOptions<T>;
+  public options: AmqpOptions;
 
   /**
    * The consumers that this broker has registered.
@@ -64,9 +64,9 @@ export default class Amqp<T = any> extends Broker<T, AmqpResponseOptions> {
    * method to wait for a response before resolving)
    * @param {number} [options.reconnectTimeout=1e4] How often to attempt to reconnect when the connection fails.
    */
-  constructor(group?: string, options?: AmqpOptions<T>);
-  constructor(group?: string, subgroup?: string, options?: AmqpOptions<T>);
-  constructor(group: string = 'default', subgroup?: AmqpOptions<T> | string, options?: AmqpOptions<T>) {
+  constructor(group?: string, options?: AmqpOptions);
+  constructor(group?: string, subgroup?: string, options?: AmqpOptions);
+  constructor(group: string = 'default', subgroup?: AmqpOptions | string, options?: AmqpOptions) {
     if (typeof subgroup === 'object') {
       super(subgroup);
       this.options = subgroup;
@@ -188,11 +188,11 @@ export default class Amqp<T = any> extends Broker<T, AmqpResponseOptions> {
    * @param {*} data The data to publish
    * @param {amqp.Options.Publish} [options={}] AMQP publish options
    */
-  public publish(event: string, data: T, options: amqp.Options.Publish = {}): void {
+  public publish(event: string, data: any, options: amqp.Options.Publish = {}): void {
     this._channel.publish(this.group, event, this.serialize(data), options);
   }
 
-  public call(method: string, data: T, options: amqp.Options.Publish = {}): Promise<unknown> {
+  public call(method: string, data: any, options: amqp.Options.Publish = {}): Promise<unknown> {
     const correlation = ulid();
     this.publish(method, data, Object.assign(options, {
       replyTo: this.callback,

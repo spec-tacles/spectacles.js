@@ -27,7 +27,7 @@ export interface RedisResponseOptions extends ResponseOptions {
 
 const STREAM_DATA_KEY = 'data';
 
-export default class RedisBroker<T = any> extends Broker<T, RedisResponseOptions> {
+export default class RedisBroker extends Broker<RedisResponseOptions> {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
@@ -57,11 +57,11 @@ export default class RedisBroker<T = any> extends Broker<T, RedisResponseOptions
     this._streamReadClient = redis.duplicate();
   }
 
-  public publish(event: string, data: T): Promise<string> {
+  public publish(event: string, data: any): Promise<string> {
     return this.redis.xadd(event, '*', STREAM_DATA_KEY, this.serialize(data));
   }
 
-  public async call(method: string, data: T, options: PublishOptions = {}): Promise<unknown> {
+  public async call(method: string, data: any, options: PublishOptions = {}): Promise<unknown> {
     const id = await this.publish(method, data);
     const rpcChannel = `${method}:${id}`;
     await this._rpcReadClient.subscribe(rpcChannel);

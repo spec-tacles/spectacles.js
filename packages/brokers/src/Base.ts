@@ -1,11 +1,11 @@
 import { EventEmitter } from 'events';
 import { encode, decode } from '@spectacles/util';
 
-export type Serialize<T> = (data: T) => Buffer;
+export type Serialize = (data: any) => Buffer;
 export type Deserialize = (data: Buffer) => unknown;
 
-export interface Options<T = any> {
-  serialize?: Serialize<T>;
+export interface Options {
+  serialize?: Serialize;
   deserialize?: Deserialize;
 }
 
@@ -17,22 +17,20 @@ export interface ResponseOptions {
   reply: (data: any) => void;
 }
 
-export type EventHandler<T> = (data: T, options: ResponseOptions) => void;
-
 /**
  * A message broker. Used to transmit data to and from the Discord Gateway.
  * @abstract
  */
-export default abstract class Broker<T, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
+export default abstract class Broker<ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
   public static DEFAULT_EXPIRATION = 5e3;
 
-  public serialize: Serialize<T>;
+  public serialize: Serialize;
   public deserialize: Deserialize;
 
   protected readonly _subscribedEvents = new Set<string>();
   private readonly _responses: EventEmitter;
 
-  constructor(options: Options<T> = {}) {
+  constructor(options: Options = {}) {
     super();
     this.serialize = options.serialize ?? encode;
     this.deserialize = options.deserialize ?? decode;
@@ -46,14 +44,14 @@ export default abstract class Broker<T, ROpts extends ResponseOptions = Response
    * @param {*} data The data of the event
    * @param {...*} args Any other args the publishing might take
    */
-  public abstract publish(event: string, data: T, options?: SendOptions): any;
+  public abstract publish(event: string, data: any, options?: SendOptions): any;
 
   /**
    * Make an RPC call on this broker if RPC is enabled.
    * @param method The RPC method to call
    * @param data The data to call the method with
    */
-  public abstract call(method: string, data: T, ...args: any[]): any;
+  public abstract call(method: string, data: any, ...args: any[]): any;
 
   /**
    * Subscribe this broker to some events.
