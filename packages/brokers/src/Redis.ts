@@ -1,15 +1,13 @@
 import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
-import { zipObject, partition, isObject } from 'lodash';
 import { resolve } from 'path';
-import { encode } from '@spectacles/util';
-import Redis = require('ioredis');
+import Redis from 'ioredis';
 import Broker, { ResponseOptions } from './Base';
 
 declare module 'ioredis' {
   interface Redis {
     xcleangroup(key: string, group: string): Promise<boolean>;
-    xadd(key: Redis.KeyType, id: string, ...args: any[]): Promise<any>;
+    xreadgroupBuffer(...args: Array<string | Buffer>): Promise<[Buffer, [Buffer, Buffer[]][]][]>;
   }
 }
 
@@ -27,24 +25,9 @@ export interface RedisResponseOptions extends ResponseOptions {
   ack: () => void;
 }
 
-Redis.Command.setArgumentTransformer('xadd', (args) => {
-  if (args.length === 3) {
-    const toAdd = args.pop();
-    if (!isObject(toAdd)) throw new Error('unable to add publish non-object');
+const STREAM_DATA_KEY = 'data';
 
-    let entries: Iterable<[any, any]>;
-    if (toAdd instanceof Map) entries = toAdd.entries();
-    else entries = Object.entries(toAdd);
-
-    const arr = [];
-    for (const [k, v] of entries) arr.push(k, v);
-    return args.concat(arr);
-  }
-
-  return args;
-});
-
-export default class RedisBroker<Send = any, Receive = any> extends Broker<Send, Receive, RedisResponseOptions> {
+export default class RedisBroker<T = any> extends Broker<T, RedisResponseOptions> {
   public name: string;
   public blockInterval: number;
   public maxChunk: number;
@@ -62,7 +45,7 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
 
     redis.defineCommand('xcleangroup', {
       numberOfKeys: 1,
-      lua: readFileSync(resolve(__dirname, '..', '..', 'scripts', 'xcleangroup.lua')).toString(),
+      lua: readFileSync(resolve(__dirname, '..', 'scripts', 'xcleangroup.lua'), 'utf8'),
     });
 
     this._rpcReadClient = redis.duplicate();
@@ -74,11 +57,11 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
     this._streamReadClient = redis.duplicate();
   }
 
-  public publish(event: string, data: Send): Promise<string> {
-    return this.redis.xadd(event, '*', data);
+  public publish(event: string, data: T): Promise<string> {
+    return this.redis.xadd(event, '*', STREAM_DATA_KEY, this.serialize(data));
   }
 
-  public async call(method: string, data: Send, options: PublishOptions = {}): Promise<Receive> {
+  public async call(method: string, data: T, options: PublishOptions = {}): Promise<unknown> {
     const id = await this.publish(method, data);
     const rpcChannel = `${method}:${id}`;
     await this._rpcReadClient.subscribe(rpcChannel);
@@ -88,6 +71,12 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
     } finally {
       this._rpcReadClient.unsubscribe(rpcChannel);
     }
+  }
+
+  public disconnect() {
+    this.redis.disconnect(false);
+    this._streamReadClient.disconnect(false);
+    this._rpcReadClient.disconnect(false);
   }
 
   protected async _subscribe(events: string[]): Promise<void> {
@@ -117,17 +106,14 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
     if (this._listening) return;
     this._listening = true;
 
-    let events: Array<string>;
     while (true) {
-      events = [...this._subscribedEvents];
-
       try {
-        let data = await this._streamReadClient.xreadgroup(
+        let data = await this._streamReadClient.xreadgroupBuffer(
           'GROUP', this.group, this.name,
           'COUNT', String(this.maxChunk),
           'BLOCK', String(this.blockInterval),
-          'STREAMS', ...events,
-          ...Array(events.length).fill('>'),
+          'STREAMS', ...this._subscribedEvents,
+          ...Array(this._subscribedEvents.size).fill('>'),
         );
 
         /*
@@ -141,11 +127,14 @@ export default class RedisBroker<Send = any, Receive = any> extends Broker<Send,
 
         for (const [event, info] of data) {
           for (const [id, packet] of info) {
-            let i = 0;
-            const obj = zipObject(...partition(packet, () => i++ % 2 === 0)) as unknown as Receive;
+            const i = packet.findIndex((v, i) => v.toString('utf8') === STREAM_DATA_KEY && i % 2 === 0);
+            if (i < 0) continue;
 
-            this._handleMessage(event, obj, {
-              reply: (data) => this.redis.publish(`${event}:${id}`, encode(data) as any),
+            const data = packet[i + 1];
+            if (!data) continue;
+
+            this._handleMessage(event.toString('utf8'), data, {
+              reply: (data) => this.redis.publishBuffer(`${event}:${id}`, this.serialize(data)),
               ack: () => this.redis.xack(event, this.group, id),
             });
           }

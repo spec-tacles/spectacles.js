@@ -13,7 +13,7 @@
     "type": "git",
     "url": "git+https://github.com/spec-tacles/brokers.git"
   },
-  "author": "Will Nelson <will@pleb.xyz>",
+  "author": "Will Nelson <me@wnelson.dev>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/spec-tacles/brokers/issues"
@@ -23,7 +23,6 @@
     "@spectacles/util": "workspace:^0.4.0",
     "amqplib": "^0.8.0",
     "ioredis": "^4.28.2",
-    "lodash": "^4.17.21",
     "ulid": "^2.3.0"
   },
   "devDependencies": {

@@ -1,12 +1,12 @@
 import { EventEmitter } from 'events';
 import { encode, decode } from '@spectacles/util';
 
-export type Serialize<Send> = (data: Send) => Buffer;
-export type Deserialize<Receive> = (data: Buffer) => Receive;
+export type Serialize<T> = (data: T) => Buffer;
+export type Deserialize = (data: Buffer) => unknown;
 
-export interface Options<Send = any, Receive = unknown> {
-  serialize?: Serialize<Send>;
-  deserialize?: Deserialize<Receive>;
+export interface Options<T = any> {
+  serialize?: Serialize<T>;
+  deserialize?: Deserialize;
 }
 
 export interface SendOptions {
@@ -23,16 +23,16 @@ export type EventHandler<T> = (data: T, options: ResponseOptions) => void;
  * A message broker. Used to transmit data to and from the Discord Gateway.
  * @abstract
  */
-export default abstract class Broker<Send, Receive, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
+export default abstract class Broker<T, ROpts extends ResponseOptions = ResponseOptions> extends EventEmitter {
   public static DEFAULT_EXPIRATION = 5e3;
 
-  public serialize: Serialize<Send>;
-  public deserialize: Deserialize<Receive>;
+  public serialize: Serialize<T>;
+  public deserialize: Deserialize;
 
   protected readonly _subscribedEvents = new Set<string>();
   private readonly _responses: EventEmitter;
 
-  constructor(options: Options<Send, Receive> = {}) {
+  constructor(options: Options<T> = {}) {
     super();
     this.serialize = options.serialize ?? encode;
     this.deserialize = options.deserialize ?? decode;
@@ -46,14 +46,14 @@ export default abstract class Broker<Send, Receive, ROpts extends ResponseOption
    * @param {*} data The data of the event
    * @param {...*} args Any other args the publishing might take
    */
-  public abstract publish(event: string, data: Send, options?: SendOptions): any;
+  public abstract publish(event: string, data: T, options?: SendOptions): any;
 
   /**
    * Make an RPC call on this broker if RPC is enabled.
    * @param method The RPC method to call
    * @param data The data to call the method with
    */
-  public abstract call(method: string, data: Send, ...args: any[]): any;
+  public abstract call(method: string, data: T, ...args: any[]): any;
 
   /**
    * Subscribe this broker to some events.
@@ -82,21 +82,21 @@ export default abstract class Broker<Send, Receive, ROpts extends ResponseOption
   protected abstract _subscribe(events: string[]): any;
   protected abstract _unsubscribe(events: string[]): any;
 
-  protected _handleMessage(event: string, message: Buffer | Receive, options: ROpts): void {
+  protected _handleMessage(event: string, message: Buffer | unknown, options: ROpts): void {
     if (Buffer.isBuffer(message)) message = this.deserialize(message);
     this.emit(event, message, options);
   }
 
-  protected _handleReply(event: string, message: Buffer | Receive): void {
+  protected _handleReply(event: string, message: Buffer | unknown): void {
     if (Buffer.isBuffer(message)) message = this.deserialize(message);
     this._responses.emit(event, message);
   }
 
   protected _awaitResponse(id: string, expiration: number = Broker.DEFAULT_EXPIRATION) {
-    return new Promise<Receive>((resolve, reject) => {
+    return new Promise<unknown>((resolve, reject) => {
       let timeout: NodeJS.Timer;
 
-      const listener = (response: Receive) => {
+      const listener = (response: unknown) => {
         clearTimeout(timeout);
         resolve(response);
       };

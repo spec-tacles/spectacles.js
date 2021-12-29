@@ -15,7 +15,7 @@ interface Request {
 }
 
 export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
-  constructor(protected broker: Broker<Request, unknown, ROpts>, public readonly token: string) {
+  constructor(protected broker: Broker<Request, ROpts>, public readonly token: string) {
     broker.serialize = function(req: Request) {
       let encoded = encode(req);
       return Buffer.from(encoded, encoded.byteOffset, encoded.byteLength);

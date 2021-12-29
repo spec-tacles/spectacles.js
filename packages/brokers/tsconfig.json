@@ -2,7 +2,8 @@
   "extends": "../../tsconfig.packages.json",
   "compilerOptions": {
     "outDir": "dist",
-    "declarationDir": "typings"
+    "declarationDir": "typings",
+    "allowSyntheticDefaultImports": true
   },
   "include": ["./src", "./test"],
   "references": [
