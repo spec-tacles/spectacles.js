@@ -14,7 +14,7 @@ interface Request {
 }
 
 export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
-  constructor(protected broker: Broker<Request, ROpts>, public readonly token: string) {
+  constructor(protected broker: Broker<ROpts>, public readonly token: string) {
     Object.defineProperty(this, 'token', { enumerable: false });
   }
 
@@ -50,12 +50,14 @@ export default class Client<ROpts extends ResponseOptions = ResponseOptions> {
       body = JSON.stringify(body);
     }
 
-    return this.broker.call('REQUEST', {
+    const rawBody: Request = {
       method,
       path,
       body,
       query: options.query,
       headers,
-    });
+    };
+
+    return this.broker.call('REQUEST', rawBody);
   }
 }

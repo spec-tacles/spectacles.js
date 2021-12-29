@@ -1,6 +1,6 @@
 import * as https from 'https';
 import { EventEmitter } from 'events';
-import { Headers, HeadersInit, RequestInit } from 'node-fetch';
+import { Headers, RequestInit } from 'node-fetch';
 import { Readable } from 'stream';
 import LocalMutex from '../mutexes/Local';
 import RatelimitMutex from '../mutexes/RatelimitMutex';
@@ -28,17 +28,10 @@ export interface Options {
 }
 
 export default class Rest extends EventEmitter {
-	public static setHeaders(req: RequestInit, headers: HeadersInit) {
-		if (Array.isArray(headers)) for (const [header, value] of headers) Rest.setHeader(req, header, value);
-		else if (headers instanceof Headers) for (const [header, value] of { [Symbol.iterator]: headers.entries }) Rest.setHeader(req, header, value);
-		else for (const [header, value] of Object.entries(headers)) Rest.setHeader(req, header, value);
-	}
-
 	public static setHeader(req: RequestInit, header: string, value: string) {
-		if (Array.isArray(req.headers)) req.headers.push([header, value]);
-		else if (req.headers instanceof Headers) req.headers.set(header, value);
-		else if (req.headers) req.headers[header] = value;
-		else req.headers = new Headers({ [header]: value });
+		const newHeaders = new Headers(req.headers);
+		newHeaders.append(header, value);
+		req.headers = newHeaders;
 	}
 
 	public static hasHeader(req: RequestInit, header: string) {

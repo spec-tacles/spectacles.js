@@ -33,7 +33,7 @@
     "@types/ioredis": "^4.28.5",
     "@types/jest": "^27.0.3",
     "@types/lodash": "^4.14.178",
-    "@types/node": "^17.0.4",
+    "@types/node": "^17.0.5",
     "@types/ws": "^8.2.2",
     "babel-jest": "^27.4.5",
     "docdash": "^1.2.0",

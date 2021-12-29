@@ -1,4 +1,4 @@
-import { AbortSignal } from 'node-fetch/externals';
+import type { AbortSignal } from 'node-fetch';
 import { InternalError } from '../structures/HTTPError';
 import { pause } from '../util';
 
