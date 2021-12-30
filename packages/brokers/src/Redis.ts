@@ -22,7 +22,7 @@ export interface ClientOptions {
 }
 
 export interface RedisResponseOptions extends ResponseOptions {
-  ack: () => void;
+  ack: () => Promise<void>;
 }
 
 const STREAM_DATA_KEY = 'data';
@@ -134,8 +134,8 @@ export default class RedisBroker extends Broker<RedisResponseOptions> {
             if (!data) continue;
 
             this._handleMessage(event.toString('utf8'), data, {
-              reply: (data) => this.redis.publishBuffer(`${event}:${id}`, this.serialize(data)),
-              ack: () => this.redis.xack(event, this.group, id),
+              reply: async (data) => { await this.redis.publishBuffer(`${event}:${id}`, this.serialize(data)) },
+              ack: async () => { await this.redis.xack(event, this.group, id) },
             });
           }
         }

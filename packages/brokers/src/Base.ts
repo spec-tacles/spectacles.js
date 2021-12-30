@@ -14,7 +14,7 @@ export interface SendOptions {
 }
 
 export interface ResponseOptions {
-  reply: (data: any) => void;
+  reply: (data: any) => Promise<void>;
 }
 
 /**

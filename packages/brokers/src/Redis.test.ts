@@ -1,6 +1,6 @@
 import { on } from 'events';
 import Redis from 'ioredis';
-import RedisBroker from './Redis';
+import RedisBroker, { RedisResponseOptions } from './Redis';
 
 let redis: RedisBroker;
 
@@ -18,7 +18,7 @@ describe('constructor', () => {
 	});
 });
 
-describe('pub/sub', () => {
+describe('Redis connection', () => {
 	test('publishes & subscribes', async () => {
 		await redis.publish('foo', 'bar');
 
@@ -32,6 +32,23 @@ describe('pub/sub', () => {
 		expect(options.reply).toBeInstanceOf(Function);
 
 		await options.ack();
+	});
+
+	test('responds to RPC', async () => {
+		const iter = on(redis, 'foo');
+		await redis.subscribe('foo');
+
+		const rpc = redis.call('foo', 'bar');
+
+		const { value: [value, options] }: { value: [unknown, RedisResponseOptions] } = await iter.next();
+		expect(value).toBe('bar');
+
+		await options.ack();
+		await options.reply('hello');
+
+		const res = await rpc;
+
+		expect(res).toBe('hello');
 	});
 });
 
