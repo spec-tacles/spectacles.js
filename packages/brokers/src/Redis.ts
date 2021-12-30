@@ -69,7 +69,7 @@ export default class RedisBroker extends Broker<RedisResponseOptions> {
     try {
       return await this._awaitResponse(id, options.timeout);
     } finally {
-      this._rpcReadClient.unsubscribe(rpcChannel);
+      await this._rpcReadClient.unsubscribe(rpcChannel);
     }
   }
 

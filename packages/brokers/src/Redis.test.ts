@@ -46,9 +46,7 @@ describe('Redis connection', () => {
 		await options.ack();
 		await options.reply('hello');
 
-		const res = await rpc;
-
-		expect(res).toBe('hello');
+		await expect(rpc).resolves.toBe('hello');
 	});
 });
 
