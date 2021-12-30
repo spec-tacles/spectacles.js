@@ -8,22 +8,22 @@ beforeAll(async () => {
 	const client = new Redis();
 	await client.flushdb();
 
-	redis = new RedisBroker('foo', client);
+	redis = new RedisBroker('foo', client, { blockInterval: 250 });
 });
 
 describe('constructor', () => {
 	test('default options', () => {
-		expect(redis.blockInterval).toBe(5000);
+		expect(redis.blockInterval).toBe(250);
 		expect(redis.maxChunk).toBe(10);
 	});
 });
 
 describe('Redis connection', () => {
 	test('publishes & subscribes', async () => {
-		await redis.publish('foo', 'bar');
+		await redis.publish('a', 'bar');
 
-		const iter = on(redis, 'foo');
-		await redis.subscribe('foo');
+		const iter = on(redis, 'a');
+		await redis.subscribe('a');
 
 		const { value: [data, options] } = await iter.next();
 
@@ -35,10 +35,11 @@ describe('Redis connection', () => {
 	});
 
 	test('responds to RPC', async () => {
-		const iter = on(redis, 'foo');
-		await redis.subscribe('foo');
+		const iter = on(redis, 'b');
+		await redis.subscribe('b');
+		console.log('a');
 
-		const rpc = redis.call('foo', 'bar');
+		const rpc = redis.call('b', 'bar');
 
 		const { value: [value, options] }: { value: [unknown, RedisResponseOptions] } = await iter.next();
 		expect(value).toBe('bar');
