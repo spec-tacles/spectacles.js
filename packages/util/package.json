@@ -4,7 +4,7 @@
   "description": "Spectacles utility methods",
   "main": "dist/src/index.js",
   "scripts": {
-    "test": "jest src",
+    "test": "jest",
     "prepare": "rimraf dist typings && tsc",
     "docs": "typedoc --out docs/ --exclude **/*.test.ts --readme none src/"
   },
@@ -35,7 +35,7 @@
     "@spectacles/types": "^0.1.4",
     "@types/jest": "^24.9.1",
     "@types/node": "^17.0.5",
-    "jest": "^26.1.0",
+    "jest": "^27.4.5",
     "rimraf": "^2.7.1",
     "typedoc": "^0.15.8",
     "typescript": "^4.5.4"
