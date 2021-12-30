@@ -1,6 +1,6 @@
 {
   "name": "@spectacles/util",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Spectacles utility methods",
   "main": "dist/src/index.js",
   "scripts": {
