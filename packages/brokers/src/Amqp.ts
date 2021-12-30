@@ -148,7 +148,10 @@ export default class Amqp extends Broker<AmqpResponseOptions> {
         if (msg) {
           try {
             this._handleMessage(event, msg.content, {
-              reply: (data) => this._channel.sendToQueue(msg.properties.replyTo, this.serialize(data), { correlationId: msg.properties.correlationId }),
+              reply: (data) => {
+                this._channel.sendToQueue(msg.properties.replyTo, this.serialize(data), { correlationId: msg.properties.correlationId });
+                return Promise.resolve();
+              },
               ack: () => this._channel.ack(msg),
               nack: (allUpTo, requeue) => this._channel.nack(msg, allUpTo, requeue),
               reject: (requeue) => this._channel.reject(msg, requeue),
