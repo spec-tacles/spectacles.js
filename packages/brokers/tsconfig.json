@@ -5,7 +5,7 @@
     "declarationDir": "typings",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["./src", "./test"],
+  "include": ["./src"],
   "references": [
     { "path": "../util/" }
   ]
