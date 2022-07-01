@@ -5,7 +5,7 @@
   "main": "dist/src/index.js",
   "scripts": {
     "test": "jest",
-    "prepare": "rimraf typings dist && tsc && cpy scripts dist/scripts",
+    "prepare": "rimraf typings dist && tsc && cpy scripts dist",
     "docs": "jsdoc -R README.md -c jsdoc.json"
   },
   "types": "typings/src/index.d.ts",
