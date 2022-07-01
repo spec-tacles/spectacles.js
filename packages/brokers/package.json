@@ -1,6 +1,6 @@
 {
   "name": "@spectacles/brokers",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Brokers for easy RPC.",
   "main": "dist/src/index.js",
   "scripts": {
